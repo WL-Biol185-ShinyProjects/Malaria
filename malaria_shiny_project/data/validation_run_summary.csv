@@ -1,0 +1,10 @@
+check,result,status
+case_rows,848,expected 53 ISO3 codes x 16 years = 848 rows
+distinct_countries,53,canonical ISO3 count
+duplicate_iso3_year_keys,0,must equal 0
+case_rows_missing_source_value,794,missing_is_not_zero
+case_rows_with_source_value,54,requires vintage review unless noted
+Azerbaijan_2012_map_value_withheld,1,expected 1
+intervention_rows,15,event source notes added
+population_observations,0,no data; no rates
+insurance_observations,0,no data; no insurance coverage map
