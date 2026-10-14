@@ -13,7 +13,6 @@ malaria <- read_csv(
 # Check the imported column names
 print(names(malaria))
 
-
 # Identify the relevant columns in the downloaded data
 entity_col <- names(malaria)[
   tolower(names(malaria)) == "entity"

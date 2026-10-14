@@ -9,7 +9,7 @@ library(viridis)
 
 # Download the same indicator used by Our World in Data
 malaria <- read_csv(
-  "https://ourworldindata.org/grapher/incidence-of-malaria.csv?v=1&csvType=full&useColumnShortNames=false"
+  "incidence-of-malaria.csv"
 )
 
 # Inspect the data
