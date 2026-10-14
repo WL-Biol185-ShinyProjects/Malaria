@@ -1,0 +1,27 @@
+drug_name,number_of_studies,median_failure_percent,mean_failure_percent,minimum_failure_percent,maximum_failure_percent
+Amodiaquine+sulfadoxine-pyrimethamine,2,6.1,6.1,3.6,8.6
+Artemether-lumefantrine+primaquine,3,2.3,1.9666666666666666,0,3.6
+Artemisinin-piperaquine,1,1.94,1.94,1.94,1.94
+Artemether-lumefantrine + amodiaquine,4,1.1,2.5250000000000004,0,7.9
+Atovaquone-proguanil,2,0.75,0.75,0,1.5
+Artemether-lumefantrine,629,0,2.241255961844197,0,42.6
+Arterolane-piperaquine,1,0,0,0,0
+Arterolane–piperaquine–mefloquine,1,0,0,0,0
+Artesunate,9,0,1.5444444444444443,0,8.2
+Artesunate+atovaquone-proguanil,2,0,0,0,0
+Artesunate+dihydroartemisinin-piperaquine,2,0,0,0,0
+Artesunate+primaquine,1,0,0,0,0
+Artesunate+sulfadoxine-pyrimethamine,107,0,2.7934579439252336,0,33.3
+Artesunate+sulfadoxine-pyrimethamine+primaquine,2,0,0,0,0
+Artesunate-amodiaquine,240,0,1.6683333333333334,0,22.6
+Artesunate-amodiaquine+primaquine,1,0,0,0,0
+Artesunate-mefloquine,90,0,2.6333333333333333,0,49.1
+Artesunate-mefloquine+primaquine,1,0,0,0,0
+Artesunate-pyronaridine,64,0,1.8871875,0,18
+Artesunate-pyronaridine+primaquine,1,0,0,0,0
+Chloroquine,149,0,2.406711409395973,0,61.9
+Chloroquine-primaquine,45,0,0.9133333333333333,0,9.6
+Dihydroartemisinin-piperaquine,263,0,5.572243346007604,0,100
+Dihydroartemisinin-piperaquine+mefloquine,5,0,0,0,0
+Dihydroartemisinin-piperaquine+primaquine,7,0,0.08571428571428572,0,0.6
+Quinine+primaquine,1,0,0,0,0
