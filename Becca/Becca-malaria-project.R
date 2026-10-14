@@ -1,17 +1,27 @@
-
-# Install these packages once if needed
-install.packages(c("tidyverse", "readxl", "janitor"))
+# 1.  Install and load these packages once if needed
+install.packages<-c("tidyverse",
+                   "readxl", 
+                   "janitor",
+                   "sf",
+                   "rnaturalearth",
+                   "leaflet",
+                   "htmltools")
 
 library(tidyverse)
 library(readxl)
 library(janitor)
+library(sf)
+library(rnaturalearth)
+library(leaflet)
+library(htmltools)
 
-# Import the WHO Excel file
+# 2. Import the WHO Excel file
 who <- read_excel(
-  "MTM_THERAPEUTIC_EFFICACY_STUDY_20261012.xlsx",
+  "Becca/MTM_THERAPEUTIC_EFFICACY_STUDY_20261012.xlsx",
   sheet = "Data"
 ) |>
   clean_names()
+
 
 # Inspect the dataset
 dim(who)
@@ -62,17 +72,6 @@ pf |>
   ) |>
   arrange(desc(median_failure_pp))
 
-#Making diagrams with only the WHO data
-
-install.packages(c(
-  "tidyverse", "readxl", "janitor",
-  "sf", "rnaturalearth"
-))
-
-
-library(tidyverse)
-library(sf)
-library(rnaturalearth)
 
 # Count studies at each coordinate pair
 site_counts <- map_data |>
