@@ -1,19 +1,15 @@
 #How is this working. There was a problems before and not it just magically works. 
 
-library(shiny)
-library(tidyverse)
-library(sf)
-library(rnaturalearth)
-library(leaflet)
-library(viridis)
+library(shiny) #the app framework
+library(tidyverse) #read_csv()
+library(sf) #spatial data --> for the map
+library(rnaturalearth) #country boundries
+library(leaflet) #interactive map
 
 # Import the Our World in Data dataset
 malaria <- read_csv(
-  "https://ourworldindata.org/grapher/incidence-of-malaria.csv?v=1&csvType=full&useColumnShortNames=false"
-)
-
-# Check the imported column names
-print(names(malaria))
+  "https://ourworldindata.org/grapher/incidence-of-malaria.csv?v=1&csvType=full&useColumnShortNames=false",
+  show_col_types = FALSE)
 
 # Identify the relevant columns in the downloaded data
 entity_col <- names(malaria)[
