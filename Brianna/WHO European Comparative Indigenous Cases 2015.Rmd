@@ -1,5 +1,5 @@
 ---
-title: "WHO European Comparative Indigenous Cases Extinction 2015"
+title: "WHO European Case Extinction (2015) and Prevention Leading Up Compared to Other Regions"
 output: html_document
 date: "2026-10-14"
 ---
@@ -34,15 +34,12 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 
 library(tidyverse)
 
-# Years to keep
 start_year <- 2000
 end_year <- 2015
 
-# Read the WHO downloads
 cases <- read_csv("Estimated number of malaria cases 2000-2015.csv", show_col_types = FALSE)
 itn <- read_csv("Prevention Insecticide-Treated Bed Net (2000-2024).csv", show_col_types = FALSE)
 
-# Check the column names before cleaning
 names(cases)
 names(itn)
 ```
@@ -50,7 +47,6 @@ names(itn)
 
 ```{r filter-who-data}
 # Keep WHO European Region countries and years 2000–2015
-# Replace these example column names with your actual names.
 
 european_countries <- c(
   "Albania", "Andorra", "Armenia", "Austria", "Azerbaijan",
@@ -80,10 +76,10 @@ cases_clean <- cases |>
     country %in% european_countries
   )
 
-# Save cleaned dataset
-write_csv(cases_clean, "Estimated number of malaria cases 2000-2015.csv")
 
-# View result
+write_csv(cases_clean, "Estimated number of WHO Europe malaria cases 2000-2015.csv")
+
+
 head(cases_clean)
 ```
 
