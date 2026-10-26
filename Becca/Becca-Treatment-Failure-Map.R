@@ -188,7 +188,7 @@ pal <- colorNumeric(
   na.color = "#808080"
 )
 
-# Cap values so anything above fail_cap gets the top colour
+# Cap values so anything above fail_cap gets the top color
 # (matches the static map instead of turning grey)
 failure_map <- failure_map |>
   mutate(failure_capped = pmin(treatment_failure_pp, fail_cap))
