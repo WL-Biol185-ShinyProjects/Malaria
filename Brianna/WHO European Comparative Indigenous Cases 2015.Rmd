@@ -1,11 +1,155 @@
 ---
-title: "WHO European Case Extinction (2015) and Prevention Leading Up Compared to Other Regions"
+title: "2000-2015 WHO European vs. Global WHO Estimated Malaria Cases"
 output: html_document
 date: "2026-10-14"
+runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r setup, message=FALSE, warning=FALSE}
+library(shiny)
+library(leaflet)
+library(dplyr)
+library(readr)
+library(rnaturalearth)
+
+# Read the two malaria datasets directly from your ZIP file
+global_raw <- read_csv(
+  "Estimated number of malaria cases 2000-2015.csv",
+  show_col_types = FALSE
+)
+
+europe_raw <- read_csv("Estimated number of WHO Europe malaria cases 2000-2015.csv",
+  show_col_types = FALSE
+)
+
+# Keep the columns we need and the years 2000–2015
+global_cases <- global_raw %>%
+  transmute(
+    iso3 = SpatialDimValueCode,
+    country = Location,
+    year = as.integer(Period),
+    cases = as.numeric(FactValueNumeric)
+  ) %>%
+  filter(year >= 2000, year <= 2015)
+
+europe_cases <- europe_raw %>%
+  transmute(
+    iso3 = SpatialDimValueCode,
+    country = country,
+    year = as.integer(year),
+    cases = as.numeric(FactValueNumeric)
+  ) %>%
+  filter(year >= 2000, year <= 2015)
+
+# Get country borders for the maps
+world <- ne_countries(
+  scale = "medium",
+  returnclass = "sf"
+) %>%
+  mutate(
+    iso3 = if_else(iso_a3 == "-99", adm0_a3, iso_a3)
+  ) %>%
+  select(iso3, name, geometry)
+
+# Use the same color scale for both maps
+case_palette <- colorNumeric(
+  palette = c("#f187d0", "#c2168c", "#0c0434"),
+  domain = log10(global_cases$cases + 1),
+  na.color = "#d9d9d9"
+)
+```
+
+```{r year-selector, echo=FALSE}
+selectInput(
+  inputId = "year",
+  label = "Choose a year:",
+  choices = 2000:2015,
+  selected = 2015
+)
+```
+
+## Interactive malaria maps {.tabset}
+
+### Global malaria estimates
+
+```{r global-map, echo=FALSE}
+leafletOutput("global_map", height = "600px")
+```
+
+### WHO European Region
+
+```{r europe-map, echo=FALSE}
+leafletOutput("europe_map", height = "600px")
+```
+
+```{r map-server, context="server", echo=FALSE}
+# Draw a map for the selected year
+draw_malaria_map <- function(data, europe_zoom = FALSE) {
+
+  # Select the chosen year's data and connect it to country borders
+  map_data <- world |>
+    left_join(
+      data |> filter(year == as.integer(input$year)),
+      by = "iso3"
+    )
+
+  # Create the map
+  map <- leaflet(map_data) |>
+    addProviderTiles(providers$CartoDB.Positron) |>
+    addPolygons(
+      fillColor = ~case_palette(log10(cases + 1)),
+      fillOpacity = 0.85,
+      color = "#ffffff",
+      weight = 0.5,
+      label = ~paste0(
+        name, ": ",
+        ifelse(
+          is.na(cases),
+          "No estimate in this file",
+          format(round(cases), big.mark = ",")
+        ),
+        " estimated cases"
+      ),
+      highlightOptions = highlightOptions(
+        weight = 2,
+        color = "#312c54",
+        bringToFront = TRUE
+      )
+    ) |>
+    addLegend(
+      position = "bottomright",
+      pal = case_palette,
+      values = log10(global_cases$cases + 1),
+      title = "Estimated cases",
+      labFormat = labelFormat(
+        transform = function(x) 10^x - 1,
+        digits = 0,
+        big.mark = ","
+      ),
+      na.label = "No estimate"
+    )
+
+  # Zoom in for the European map
+  if (europe_zoom) {
+    map <- map |> setView(lng = 40, lat = 45, zoom = 3)
+  }
+
+  map
+}
+
+# Update the global map whenever the year changes
+output$global_map <- renderLeaflet({
+  draw_malaria_map(global_cases)
+})
+
+# Update the European map whenever the year changes
+output$europe_map <- renderLeaflet({
+  draw_malaria_map(europe_cases, europe_zoom = TRUE)
+})
 ```
 
 ## R Markdown

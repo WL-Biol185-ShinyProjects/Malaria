@@ -2,6 +2,11 @@
 # Run from the folder containing the two input CSVs.
 # Keeps source-reported values separate from values safe to display on the map.
 
+install.packages(c(
+  "shiny", "leaflet", "dplyr", "readr",
+  "rnaturalearth", "rnaturalearthdata"
+))
+
 library(readr)
 library(dplyr)
 library(stringr)
