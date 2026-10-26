@@ -1,10 +1,4 @@
 
-# Run this installation line ONCE if you need these packages
-install.packages(c(
-  "shiny", "tidyverse", "sf", "rnaturalearth",
-  "rnaturalearthdata", "leaflet"
-))
-
 # Load packages
 library(shiny)
 library(tidyverse)
