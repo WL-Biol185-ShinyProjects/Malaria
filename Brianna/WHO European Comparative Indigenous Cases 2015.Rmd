@@ -58,66 +58,108 @@ world <- ne_countries(
   ) %>%
   select(iso3, name, geometry)
 
-# Use the same color scale on both maps
 case_palette <- colorNumeric(
-  palette = c("#f187d0", "#c2168c", "#0c0434"),
-  domain = log10(global_cases$cases + 1),
-  na.color = "#d9d9d9"
+  palette = c(
+    "#21113D",  # Deep purple: low values
+    "#63318E",  # Purple
+    "#B536A0",  # Magenta
+    "#F15BB5",  # Bright pink
+    "#FFD166"   # Warm yellow: high values
+  ),
+  domain = europe_cases$cases,
+  na.color = "#30303A"
 )
+
 ```
 
 
-```{r}
-draw_malaria_map <- function(data, selected_year, europe_zoom = FALSE) {
+```{r draw-map} 
+id="mapfunc01"
+europe_iso3 <- c(
+  "ALB", "AND", "ARM", "AUT", "AZE", "BLR", "BEL",
+  "BIH", "BGR", "HRV", "CYP", "CZE", "DNK", "EST",
+  "FIN", "FRA", "GEO", "DEU", "GRC", "HUN", "ISL",
+  "IRL", "ISR", "ITA", "KAZ", "KGZ", "LVA", "LTU",
+  "LUX", "MLT", "MCO", "MNE", "NLD", "MKD", "NOR",
+  "POL", "PRT", "MDA", "ROU", "RUS", "SMR", "SRB",
+  "SVK", "SVN", "ESP", "SWE", "CHE", "TJK", "TUR",
+  "TKM", "UKR", "GBR", "UZB"
+)
+
+draw_malaria_map <- function(selected_year) {
 
   map_data <- world %>%
+    filter(iso3 %in% europe_iso3) %>%
     left_join(
-      data %>% filter(year == as.integer(selected_year)),
+      europe_cases %>%
+        filter(year == as.integer(selected_year)),
       by = "iso3"
-    )
+    ) %>%
+    mutate(is_azerbaijan = iso3 == "AZE")
 
-  map <- leaflet(map_data) %>%
+  leaflet(map_data) %>%
     addTiles() %>%
+    setView(lng = 35, lat = 48, zoom = 3) %>%
     addPolygons(
-      fillColor = ~case_palette(log10(cases + 1)),
-      fillOpacity = 0.85,
-      color = "#ffffff",
-      weight = 0.5,
+      fillColor = ~case_palette(cases),
+      fillOpacity = 0.9,
+      color = ~ifelse(is_azerbaijan, "#FF3CAC", "#55515F"),
+      weight = ~ifelse(is_azerbaijan, 4, 0.8),
       label = ~paste0(
-        name, ": ",
+        name,
+        ifelse(is_azerbaijan, " ★ FOCUS COUNTRY", ""),
+        ": ",
         ifelse(
           is.na(cases),
-          "No estimate in this file",
+          "No estimate available",
           format(round(cases), big.mark = ",")
         ),
         " estimated cases"
       ),
       highlightOptions = highlightOptions(
-        weight = 2,
-        color = "#312c54",
+        weight = 4,
+        color = "#FFD166",
         bringToFront = TRUE
+      )
+    ) %>%
+    addLabelOnlyMarkers(
+      data = sf::st_point_on_surface(
+        map_data %>% filter(is_azerbaijan)
+      ),
+      label = ~"AZERBAIJAN",
+      labelOptions = labelOptions(
+        noHide = TRUE,
+        direction = "top",
+        textOnly = TRUE,
+        style = list(
+          "color" = "#FF3CAC",
+          "font-weight" = "bold",
+          "font-size" = "12px",
+          "text-shadow" = "0 0 5px #000000"
+        )
       )
     ) %>%
     addLegend(
       position = "bottomright",
       pal = case_palette,
-      values = log10(global_cases$cases + 1),
+      values = europe_cases$cases,
       title = "Estimated cases",
-      labFormat = labelFormat(
-        transform = function(x) 10^x - 1,
-        digits = 0,
-        big.mark = ","
-      ),
       na.label = "No estimate"
+    ) %>%
+    addControl(
+      paste0(
+        "<strong style='color:#FF3CAC'>WHO EUROPE</strong>",
+        "<br>Year: ", selected_year,
+        "<br><span style='color:#FFD166'>●</span> ",
+        "Azerbaijan highlighted"
+      ),
+      position = "topleft"
     )
-
-  if (europe_zoom) {
-    map <- map %>% setView(lng = 40, lat = 45, zoom = 3)
-  }
-
-  map
 }
 ```
+
+
+
 
 ```{r year-selector, echo=FALSE}
 selectInput(
@@ -143,37 +185,203 @@ leafletOutput("europe_map", height = "600px")
 ```
 
 
+
+
 ```{r run-maps, echo=FALSE}
+library(bslib)
+library(plotly)
+
 ui <- fluidPage(
-  selectInput("year", "Choose a year:",
-              choices = 2000:2015, selected = 2015),
-  tabsetPanel(
-    tabPanel("Global malaria estimates",
-             leafletOutput("global_map", height = "600px")),
-    tabPanel("WHO European Region",
-             leafletOutput("europe_map", height = "600px"))
+  theme = bs_theme(
+    bootswatch = "cyborg",
+    bg = "#050509",
+    fg = "#F5F5F7",
+    primary = "#FF3CAC",
+    secondary = "#7B2CBF"
+  ),
+
+  tags$head(tags$style(HTML("
+    body { background: #050509; }
+    .dashboard-title {
+      color: #FF3CAC;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .panel-card {
+      background: #111118;
+      border: 1px solid #30243F;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .nav-tabs > li.active > a,
+    .nav-tabs > li.active > a:hover {
+      background: #21113D !important;
+      color: #FF3CAC !important;
+      border-color: #63318E !important;
+    }
+    .nav-tabs > li > a { color: #D9CDE8; }
+    .control-label { color: #F5F5F7; }
+  "))),
+
+  div(
+    class = "panel-card",
+    h2(
+      class = "dashboard-title",
+      "MALARIA ERADICATION EXPLORER"
+    ),
+    p(
+      "WHO European Region | 2000–2015",
+      style = "color:#B9B1C9;"
+    ),
+    sliderInput(
+      "year", "Explore the year:",
+      min = 2000, max = 2015,
+      value = 2000, step = 1, sep = "",
+      animate = animationOptions(
+        interval = 1500, loop = TRUE
+      )
+    )
+  ),
+
+  fluidRow(
+    column(
+      8,
+      div(
+        class = "panel-card",
+        h4("European malaria hotspot"),
+        leafletOutput("malaria_map", height = "610px")
+      )
+    ),
+
+    column(
+      4,
+      div(
+        class = "panel-card",
+        tabsetPanel(
+          tabPanel(
+            "Azerbaijan",
+            br(),
+            uiOutput("azerbaijan_summary")
+          ),
+          tabPanel(
+            "Trend",
+            br(),
+            plotlyOutput("az_trend", height = "420px")
+          ),
+          tabPanel(
+            "Timeline",
+            br(),
+            h4("Key milestones"),
+            p(
+              strong("2012"),
+              br(),
+              "Azerbaijan reported zero indigenous cases."
+            ),
+            p(
+              strong("2015"),
+              br(),
+              "The WHO European Region reached zero indigenous malaria cases."
+            ),
+            p(
+              strong("2023"),
+              br(),
+              "Azerbaijan was certified malaria-free by WHO."
+            ),
+            p(
+              style = "color:#B9B1C9;font-size:12px;",
+              "Milestones describe indigenous transmission, ",
+              "not the estimated-case shading on the map."
+            )
+          )
+        )
+      )
+    )
   )
 )
 
 server <- function(input, output, session) {
 
-  output$global_map <- renderLeaflet({
-    draw_malaria_map(
-      global_cases,
-      selected_year = input$year
+  output$malaria_map <- renderLeaflet({
+    draw_malaria_map(input$year)
+  })
+
+  output$azerbaijan_summary <- renderUI({
+    az <- europe_cases %>%
+      filter(
+        iso3 == "AZE",
+        year == as.integer(input$year)
+      )
+
+    if (nrow(az) == 0 || is.na(az$cases[1])) {
+      return(
+        div(
+          h3("Azerbaijan"),
+          p("No estimate available for this year.")
+        )
+      )
+    }
+
+    div(
+      h4("AZERBAIJAN", style = "color:#FF3CAC;"),
+      h2(
+        format(round(az$cases[1]), big.mark = ","),
+        style = "color:#FFD166;"
+      ),
+      p("Estimated malaria cases"),
+      p(paste("Selected year:", input$year))
     )
   })
 
-  output$europe_map <- renderLeaflet({
-    draw_malaria_map(
-      europe_cases,
-      selected_year = input$year,
-      europe_zoom = TRUE
-    )
-  })
+  output$az_trend <- renderPlotly({
 
+    az <- europe_cases %>%
+      filter(iso3 == "AZE") %>%
+      arrange(year)
+
+    if (nrow(az) == 0) {
+      return(
+        plot_ly() %>%
+          layout(
+            title = "No Azerbaijan time-series data found",
+            paper_bgcolor = "#111118",
+            plot_bgcolor = "#111118",
+            font = list(color = "#F5F5F7")
+          )
+      )
+    }
+
+    plot_ly(
+      data = az,
+      x = ~year,
+      y = ~cases,
+      type = "scatter",
+      mode = "lines+markers",
+      line = list(color = "#FF3CAC", width = 3),
+      marker = list(color = "#FFD166", size = 7),
+      hovertemplate = paste(
+        "Year: %{x}",
+        "<br>Estimated cases: %{y:,.0f}",
+        "<extra></extra>"
+      )
+    ) %>%
+      layout(
+        title = "Azerbaijan: estimated cases",
+        paper_bgcolor = "#111118",
+        plot_bgcolor = "#111118",
+        font = list(color = "#F5F5F7"),
+        xaxis = list(
+          title = "Year",
+          gridcolor = "#30243F"
+        ),
+        yaxis = list(
+          title = "Estimated cases",
+          gridcolor = "#30243F"
+        ),
+        margin = list(l = 55, r = 15, t = 55, b = 45)
+      )
+  })
 }
 
 shinyApp(ui = ui, server = server)
 ```
-
