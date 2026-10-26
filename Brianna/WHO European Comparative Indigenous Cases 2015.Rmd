@@ -1,6 +1,8 @@
+
 ---
-title: "WHO European Case Extinction (2015) and Prevention Leading Up Compared to Other Regions"
+title: "2000-2015 WHO European vs. Global WHO Estimated Malaria Cases"
 output: html_document
+runtime: shiny
 date: "2026-10-14"
 ---
 
@@ -8,78 +10,170 @@ date: "2026-10-14"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+```{r load-data, message=FALSE, warning=FALSE}
+library(shiny)
+library(leaflet)
+library(dplyr)
+library(readr)
+library(rnaturalearth)
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
-
-
-```{r tidy-who-data, message=FALSE, warning=FALSE}
-
-library(tidyverse)
-
-start_year <- 2000
-end_year <- 2015
-
-cases <- read_csv("Estimated number of malaria cases 2000-2015.csv", show_col_types = FALSE)
-itn <- read_csv("Prevention Insecticide-Treated Bed Net (2000-2024).csv", show_col_types = FALSE)
-
-names(cases)
-names(itn)
-```
-
-
-```{r filter-who-data}
-# Keep WHO European Region countries and years 2000–2015
-
-european_countries <- c(
-  "Albania", "Andorra", "Armenia", "Austria", "Azerbaijan",
-  "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria",
-  "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia",
-  "Finland", "France", "Georgia", "Germany", "Greece",
-  "Hungary", "Iceland", "Ireland", "Israel", "Italy",
-  "Kazakhstan", "Kyrgyzstan", "Latvia", "Lithuania",
-  "Luxembourg", "Malta", "Monaco", "Montenegro",
-  "Netherlands", "North Macedonia", "Norway", "Poland",
-  "Portugal", "Republic of Moldova", "Romania", "Russian Federation",
-  "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain",
-  "Sweden", "Switzerland", "Tajikistan", "Türkiye", "Turkmenistan",
-  "Ukraine", "United Kingdom", "Uzbekistan"
+# Read the CSV files in your project folder
+global_raw <- read_csv(
+  "Estimated number of malaria cases 2000-2015.csv",
+  show_col_types = FALSE
 )
 
-cases_clean <- cases |>
-  rename(
+europe_raw <- read_csv(
+  "Estimated number of WHO Europe malaria cases 2000-2015.csv",
+  show_col_types = FALSE
+)
+
+# Prepare the global data
+global_cases <- global_raw %>%
+  transmute(
+    iso3 = SpatialDimValueCode,
     country = Location,
-    year = Period,
-    value = Value
-  ) |>
-  mutate(year = as.integer(year)) |>
-  filter(
-    year >= start_year,
-    year <= end_year,
-    country %in% european_countries
+    year = as.integer(Period),
+    cases = as.numeric(FactValueNumeric)
+  ) %>%
+  filter(year >= 2000, year <= 2015)
+
+# Prepare the European data
+europe_cases <- europe_raw %>%
+  transmute(
+    iso3 = SpatialDimValueCode,
+    country = country,
+    year = as.integer(year),
+    cases = as.numeric(FactValueNumeric)
+  ) %>%
+  filter(year >= 2000, year <= 2015)
+
+# Load country borders
+world <- ne_countries(
+  scale = "medium",
+  returnclass = "sf"
+) %>%
+  mutate(
+    iso3 = if_else(iso_a3 == "-99", adm0_a3, iso_a3)
+  ) %>%
+  select(iso3, name, geometry)
+
+# Use the same color scale on both maps
+case_palette <- colorNumeric(
+  palette = c("#f187d0", "#c2168c", "#0c0434"),
+  domain = log10(global_cases$cases + 1),
+  na.color = "#d9d9d9"
+)
+```
+
+
+```{r}
+draw_malaria_map <- function(data, selected_year, europe_zoom = FALSE) {
+
+  map_data <- world %>%
+    left_join(
+      data %>% filter(year == as.integer(selected_year)),
+      by = "iso3"
+    )
+
+  map <- leaflet(map_data) %>%
+    addTiles() %>%
+    addPolygons(
+      fillColor = ~case_palette(log10(cases + 1)),
+      fillOpacity = 0.85,
+      color = "#ffffff",
+      weight = 0.5,
+      label = ~paste0(
+        name, ": ",
+        ifelse(
+          is.na(cases),
+          "No estimate in this file",
+          format(round(cases), big.mark = ",")
+        ),
+        " estimated cases"
+      ),
+      highlightOptions = highlightOptions(
+        weight = 2,
+        color = "#312c54",
+        bringToFront = TRUE
+      )
+    ) %>%
+    addLegend(
+      position = "bottomright",
+      pal = case_palette,
+      values = log10(global_cases$cases + 1),
+      title = "Estimated cases",
+      labFormat = labelFormat(
+        transform = function(x) 10^x - 1,
+        digits = 0,
+        big.mark = ","
+      ),
+      na.label = "No estimate"
+    )
+
+  if (europe_zoom) {
+    map <- map %>% setView(lng = 40, lat = 45, zoom = 3)
+  }
+
+  map
+}
+```
+
+```{r year-selector, echo=FALSE}
+selectInput(
+  inputId = "year",
+  label = "Choose a year:",
+  choices = 2000:2015,
+  selected = 2015
+)
+```
+
+## Interactive malaria maps {.tabset}
+
+### Global malaria estimates
+
+```{r global-map, echo=FALSE}
+leafletOutput("global_map", height = "600px")
+```
+
+### WHO European Region
+
+```{r europe-map, echo=FALSE}
+leafletOutput("europe_map", height = "600px")
+```
+
+
+```{r run-maps, echo=FALSE}
+ui <- fluidPage(
+  selectInput("year", "Choose a year:",
+              choices = 2000:2015, selected = 2015),
+  tabsetPanel(
+    tabPanel("Global malaria estimates",
+             leafletOutput("global_map", height = "600px")),
+    tabPanel("WHO European Region",
+             leafletOutput("europe_map", height = "600px"))
   )
+)
 
+server <- function(input, output, session) {
 
-write_csv(cases_clean, "Estimated number of WHO Europe malaria cases 2000-2015.csv")
+  output$global_map <- renderLeaflet({
+    draw_malaria_map(
+      global_cases,
+      selected_year = input$year
+    )
+  })
 
+  output$europe_map <- renderLeaflet({
+    draw_malaria_map(
+      europe_cases,
+      selected_year = input$year,
+      europe_zoom = TRUE
+    )
+  })
 
-head(cases_clean)
+}
+
+shinyApp(ui = ui, server = server)
 ```
 
