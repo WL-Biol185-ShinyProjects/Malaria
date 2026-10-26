@@ -1,32 +1,34 @@
+
 ---
 title: "2000-2015 WHO European vs. Global WHO Estimated Malaria Cases"
 output: html_document
-date: "2026-10-14"
 runtime: shiny
+date: "2026-10-14"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r setup, message=FALSE, warning=FALSE}
+```{r load-data, message=FALSE, warning=FALSE}
 library(shiny)
 library(leaflet)
 library(dplyr)
 library(readr)
 library(rnaturalearth)
 
-# Read the two malaria datasets directly from your ZIP file
+# Read the CSV files in your project folder
 global_raw <- read_csv(
   "Estimated number of malaria cases 2000-2015.csv",
   show_col_types = FALSE
 )
 
-europe_raw <- read_csv("Estimated number of WHO Europe malaria cases 2000-2015.csv",
+europe_raw <- read_csv(
+  "Estimated number of WHO Europe malaria cases 2000-2015.csv",
   show_col_types = FALSE
 )
 
-# Keep the columns we need and the years 2000–2015
+# Prepare the global data
 global_cases <- global_raw %>%
   transmute(
     iso3 = SpatialDimValueCode,
@@ -36,6 +38,7 @@ global_cases <- global_raw %>%
   ) %>%
   filter(year >= 2000, year <= 2015)
 
+# Prepare the European data
 europe_cases <- europe_raw %>%
   transmute(
     iso3 = SpatialDimValueCode,
@@ -45,7 +48,7 @@ europe_cases <- europe_raw %>%
   ) %>%
   filter(year >= 2000, year <= 2015)
 
-# Get country borders for the maps
+# Load country borders
 world <- ne_countries(
   scale = "medium",
   returnclass = "sf"
@@ -55,12 +58,65 @@ world <- ne_countries(
   ) %>%
   select(iso3, name, geometry)
 
-# Use the same color scale for both maps
+# Use the same color scale on both maps
 case_palette <- colorNumeric(
   palette = c("#f187d0", "#c2168c", "#0c0434"),
   domain = log10(global_cases$cases + 1),
   na.color = "#d9d9d9"
 )
+```
+
+
+```{r}
+draw_malaria_map <- function(data, selected_year, europe_zoom = FALSE) {
+
+  map_data <- world %>%
+    left_join(
+      data %>% filter(year == as.integer(selected_year)),
+      by = "iso3"
+    )
+
+  map <- leaflet(map_data) %>%
+    addTiles() %>%
+    addPolygons(
+      fillColor = ~case_palette(log10(cases + 1)),
+      fillOpacity = 0.85,
+      color = "#ffffff",
+      weight = 0.5,
+      label = ~paste0(
+        name, ": ",
+        ifelse(
+          is.na(cases),
+          "No estimate in this file",
+          format(round(cases), big.mark = ",")
+        ),
+        " estimated cases"
+      ),
+      highlightOptions = highlightOptions(
+        weight = 2,
+        color = "#312c54",
+        bringToFront = TRUE
+      )
+    ) %>%
+    addLegend(
+      position = "bottomright",
+      pal = case_palette,
+      values = log10(global_cases$cases + 1),
+      title = "Estimated cases",
+      labFormat = labelFormat(
+        transform = function(x) 10^x - 1,
+        digits = 0,
+        big.mark = ","
+      ),
+      na.label = "No estimate"
+    )
+
+  if (europe_zoom) {
+    map <- map %>% setView(lng = 40, lat = 45, zoom = 3)
+  }
+
+  map
+}
 ```
 
 ```{r year-selector, echo=FALSE}
@@ -86,88 +142,38 @@ leafletOutput("global_map", height = "600px")
 leafletOutput("europe_map", height = "600px")
 ```
 
-```{r map-server, context="server", echo=FALSE}
-# Draw a map for the selected year
-draw_malaria_map <- function(data, europe_zoom = FALSE) {
 
-  # Select the chosen year's data and connect it to country borders
-  map_data <- world |>
-    left_join(
-      data |> filter(year == as.integer(input$year)),
-      by = "iso3"
+```{r run-maps, echo=FALSE}
+ui <- fluidPage(
+  selectInput("year", "Choose a year:",
+              choices = 2000:2015, selected = 2015),
+  tabsetPanel(
+    tabPanel("Global malaria estimates",
+             leafletOutput("global_map", height = "600px")),
+    tabPanel("WHO European Region",
+             leafletOutput("europe_map", height = "600px"))
+  )
+)
+
+server <- function(input, output, session) {
+
+  output$global_map <- renderLeaflet({
+    draw_malaria_map(
+      global_cases,
+      selected_year = input$year
     )
+  })
 
-  # Create the map
-  map <- leaflet(map_data) |>
-    addProviderTiles(providers$CartoDB.Positron) |>
-    addPolygons(
-      fillColor = ~case_palette(log10(cases + 1)),
-      fillOpacity = 0.85,
-      color = "#ffffff",
-      weight = 0.5,
-      label = ~paste0(
-        name, ": ",
-        ifelse(
-          is.na(cases),
-          "No estimate in this file",
-          format(round(cases), big.mark = ",")
-        ),
-        " estimated cases"
-      ),
-      highlightOptions = highlightOptions(
-        weight = 2,
-        color = "#312c54",
-        bringToFront = TRUE
-      )
-    ) |>
-    addLegend(
-      position = "bottomright",
-      pal = case_palette,
-      values = log10(global_cases$cases + 1),
-      title = "Estimated cases",
-      labFormat = labelFormat(
-        transform = function(x) 10^x - 1,
-        digits = 0,
-        big.mark = ","
-      ),
-      na.label = "No estimate"
+  output$europe_map <- renderLeaflet({
+    draw_malaria_map(
+      europe_cases,
+      selected_year = input$year,
+      europe_zoom = TRUE
     )
+  })
 
-  # Zoom in for the European map
-  if (europe_zoom) {
-    map <- map |> setView(lng = 40, lat = 45, zoom = 3)
-  }
-
-  map
 }
 
-# Update the global map whenever the year changes
-output$global_map <- renderLeaflet({
-  draw_malaria_map(global_cases)
-})
-
-# Update the European map whenever the year changes
-output$europe_map <- renderLeaflet({
-  draw_malaria_map(europe_cases, europe_zoom = TRUE)
-})
+shinyApp(ui = ui, server = server)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
