@@ -2,7 +2,7 @@ library(shiny)
 library(tidyverse)
 
 long_path <- "malaria_clean.csv"        # from 01_organize_data.R
-wide_path <- "Lex/expansion_csv/malaria_wide.csv"       # from 02_organize_data.R
+wide_path <- "../malaria_wide.csv"       # from 02_organize_data.R
 
 malaria_long <- read_csv(long_path, show_col_types = FALSE)
 malaria_wide <- read_csv(wide_path, show_col_types = FALSE)
