@@ -6,6 +6,7 @@ install.packages(c(
   "shiny", "leaflet", "dplyr", "readr",
   "rnaturalearth", "rnaturalearthdata"
 ))
+install.packages(c("bslib", "plotly"))
 
 library(readr)
 library(dplyr)
