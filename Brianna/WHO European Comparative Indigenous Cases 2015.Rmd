@@ -10,6 +10,20 @@ date: "2026-10-14"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+```{r load-data chunk}
+global_raw <- read_csv(
+  "Brianna/Estimated number of malaria cases 2000-2015.csv",
+  show_col_types = FALSE
+)
+
+europe_raw <- read_csv(
+  "Brianna/Estimated number of WHO Europe malaria cases 2000-2015.csv",
+  show_col_types = FALSE
+)
+```
+
+
 ```{r load-data, message=FALSE, warning=FALSE}
 library(shiny)
 library(leaflet)
@@ -19,12 +33,12 @@ library(rnaturalearth)
 
 # Read the CSV files in your project folder
 global_raw <- read_csv(
-  "Estimated number of malaria cases 2000-2015.csv",
+  "Brianna/Estimated number of malaria cases 2000-2015.csv",
   show_col_types = FALSE
 )
 
 europe_raw <- read_csv(
-  "Estimated number of WHO Europe malaria cases 2000-2015.csv",
+  "Brianna/Estimated number of WHO Europe malaria cases 2000-2015.csv",
   show_col_types = FALSE
 )
 
