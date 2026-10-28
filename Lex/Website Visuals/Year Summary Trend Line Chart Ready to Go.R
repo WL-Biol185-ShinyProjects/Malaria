@@ -2,7 +2,7 @@ library(tidyverse)
 
 #year_summary trend line chart!
 
-year_summary <- read_csv("Lex/expansion_csv/year_summary.csv", show_col_types = FALSE)
+year_summary <- read_csv("expansion_csv/year_summary.csv", show_col_types = FALSE)
 
 #list.files("Lex/expansion_csv/year_summary.csv")
 
@@ -61,7 +61,7 @@ library(plotly)
 library(htmlwidgets)
 library(tidyverse)
 
-year_summary <- read_csv("Lex/expansion_csv/year_summary.csv", show_col_types = FALSE)
+year_summary <- read_csv("expansion_csv/year_summary.csv", show_col_types = FALSE)
 
 trend_long <- year_summary %>%
   select(year, n_countries, mean_incidence, median_incidence) %>%
@@ -118,4 +118,5 @@ interactive_plot <- ggplotly(trend_plot, tooltip = "text") %>%
 #A small country and a very large one carry the same weight, so neither line is a true global rate.
 
 interactive_plot
+
 
