@@ -317,8 +317,49 @@ ui <- fluidPage(
 server <- function(input, output, session) {
 
   output$malaria_map <- renderLeaflet({
+    make_map_data <- function(selected_year) {
+  world %>%
+    filter(iso3 %in% europe_iso3) %>%
+    left_join(
+      europe_cases %>% filter(year == as.integer(selected_year)),
+      by = "iso3"
+    ) %>%
+    mutate(is_azerbaijan = iso3 == "AZE")
+}
     draw_malaria_map(input$year)
   })
+
+  
+observeEvent(input$year, {
+  map_data <- make_map_data(as.integer(input$year))
+
+  leafletProxy("malaria_map", data = map_data) %>%
+    clearGroup("country-polygons") %>%
+    addPolygons(
+      group = "country-polygons",
+      layerId = ~iso3,
+      fillColor = ~case_palette(cases),
+      fillOpacity = 0.9,
+      color = ~ifelse(is_azerbaijan, "#FF3CAC", "#55515F"),
+      weight = ~ifelse(is_azerbaijan, 3, 0.8),
+      label = ~paste0(
+        name,
+        ifelse(is_azerbaijan, " ★ FOCUS COUNTRY", ""),
+        ": ",
+        ifelse(
+          is.na(cases),
+          "No estimate available",
+          format(round(cases), big.mark = ",")
+        ),
+        " estimated cases"
+      ),
+      highlightOptions = highlightOptions(
+        weight = 3,
+        color = "#FFD166",
+        bringToFront = TRUE
+      )
+    )
+}, ignoreInit = TRUE)
 
   output$azerbaijan_summary <- renderUI({
     az <- europe_cases %>%
