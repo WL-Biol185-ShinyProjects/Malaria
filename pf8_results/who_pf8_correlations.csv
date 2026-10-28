@@ -1,0 +1,13 @@
+analysis,marker,drug_group,level,n_units,rho,p_value
+kelch13 vs day-3 positivity (ACTs),k13_validated,ACT,study record,633,0.7010007643333732,1.0387469490488528e-94
+kelch13 vs day-3 positivity (ACTs),k13_validated,ACT,country,29,0.7632466909573219,1.4710235653517065e-6
+kelch13 vs treatment failure (ACTs),k13_validated,ACT,study record,678,0.12060326319719596,0.0016551120239544752
+kelch13 vs treatment failure (ACTs),k13_validated,ACT,country,29,-0.09152620611804232,0.6367866630789805
+kelch13 vs treatment failure (AL),k13_validated,AL,study record,280,0.22716006259831192,1.2589355263492051e-4
+kelch13 vs treatment failure (AL),k13_validated,AL,country,26,0.49100565483128467,0.010863458060768738
+pfmdr1 N86 vs AL failure,mdr1_86N,AL,study record,289,0.13997161902564328,0.0172686385773977
+pfmdr1 N86 vs AL failure,mdr1_86N,AL,country,26,0.3142641540439897,0.11792466174628016
+pfmdr1 NFD vs AL failure,mdr1_NFD,AL,study record,285,0.08676776202961033,0.14398038306876218
+pfmdr1 NFD vs AL failure,mdr1_NFD,AL,country,26,0.2073397624852121,0.3094709727165535
+pfcrt K76 (wild type) vs AL failure,crt_76K,AL,study record,289,0.026212622497794057,0.6572164003340808
+pfcrt K76 (wild type) vs AL failure,crt_76K,AL,country,26,-0.17109344436350768,0.4033289446656724

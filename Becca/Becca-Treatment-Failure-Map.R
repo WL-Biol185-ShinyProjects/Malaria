@@ -1,7 +1,5 @@
-# ============================================================
 # WHO malaria therapeutic efficacy studies: analysis and maps
 # Requires R >= 4.1 (native pipe) and ggplot2 >= 3.5.0
-# ============================================================
 
 # ---- 1. Packages -------------------------------------------
 pkgs <- c("tidyverse", "readxl", "janitor", "sf",
