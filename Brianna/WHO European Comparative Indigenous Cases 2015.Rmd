@@ -116,7 +116,7 @@ draw_malaria_map <- function(selected_year) {
           "No estimate available",
           format(round(cases), big.mark = ",")
         ),
-        " estimated cases"
+        " Estimated Eases"
       ),
       highlightOptions = highlightOptions(
         weight = 4,
@@ -145,7 +145,7 @@ draw_malaria_map <- function(selected_year) {
       position = "bottomright",
       pal = case_palette,
       values = europe_cases$cases,
-      title = "Estimated cases",
+      title = "Estimated Cases",
       na.label = "No estimate"
     ) %>%
     addControl(
@@ -251,7 +251,7 @@ ui <- fluidPage(
       8,
       div(
         class = "panel-card",
-        h4("European malaria hotspot"),
+        h4("European Malaria Hotspot"),
         leafletOutput("malaria_map", height = "610px")
       )
     ),
@@ -339,7 +339,7 @@ observeEvent(input$year, {
           "No estimate available",
           format(round(cases), big.mark = ",")
         ),
-        " estimated cases"
+        " Estimated Cases"
       ),
       highlightOptions = highlightOptions(
         weight = 3,
@@ -371,7 +371,7 @@ observeEvent(input$year, {
         format(round(az$cases[1]), big.mark = ","),
         style = "color:#FFD166;"
       ),
-      p("Estimated malaria cases"),
+      p("Estimated Malaria Cases"),
       p(paste("Selected year:", input$year))
     )
   })
@@ -404,12 +404,12 @@ observeEvent(input$year, {
       marker = list(color = "#FFD166", size = 7),
       hovertemplate = paste(
         "Year: %{x}",
-        "<br>Estimated cases: %{y:,.0f}",
+        "<br>Estimated Cases: %{y:,.0f}",
         "<extra></extra>"
       )
     ) %>%
       layout(
-        title = "Azerbaijan: estimated cases",
+        title = "Azerbaijan: Estimated Cases",
         paper_bgcolor = "#111118",
         plot_bgcolor = "#111118",
         font = list(color = "#F5F5F7"),
@@ -418,7 +418,7 @@ observeEvent(input$year, {
           gridcolor = "#30243F"
         ),
         yaxis = list(
-          title = "Estimated cases",
+          title = "Estimated Cases",
           gridcolor = "#30243F"
         ),
         margin = list(l = 55, r = 15, t = 55, b = 45)
