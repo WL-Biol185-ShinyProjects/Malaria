@@ -21,12 +21,12 @@ library(rnaturalearth)
 
 # Read the CSV files in your project folder
 global_raw <- read_csv(
-  "Estimated number of malaria cases 2000-2015.csv",
+  "estimated_number_of_malaria_cases_2000-2015.csv",
   show_col_types = FALSE
 )
 
 europe_raw <- read_csv(
-  "Estimated number of WHO Europe malaria cases 2000-2015.csv",
+  "estimated_number_of_WHO_europe_malaria_cases_2000-2015.csv",
   show_col_types = FALSE
 )
 
@@ -287,14 +287,14 @@ ui <- fluidPage(
   ),
 
   # MAP AND AZERBAIJAN INFORMATION
-  h3("01 | MALARIA ACROSS EUROPE", class = "section-title"),
+  h3("MALARIA ACROSS EUROPE", class = "section-title"),
 
   fluidRow(
     column(
       8,
       div(
         class = "panel-card",
-        h4("European Malaria Hotspot"),
+        h4("European Malaria Indigenous Cases"),
         leafletOutput("malaria_map", height = 610)
       )
     ),
@@ -342,7 +342,7 @@ ui <- fluidPage(
     )
   ),
 
-  h3("02 | BACKGROUND AND DATA", class = "section-title"),
+  h3("BACKGROUND AND DATA", class = "section-title"),
 
   fluidRow(
     column(
@@ -374,7 +374,7 @@ ui <- fluidPage(
   ),
 
   # COMPARISON GRAPH
-  h3("03 | MALARIA CASES OVER TIME", class = "section-title"),
+  h3("MALARIA CASES OVER TIME", class = "section-title"),
 
   p(
     class = "description",
@@ -388,8 +388,7 @@ ui <- fluidPage(
   ),
 
   # FOOTER
-  p(
-    "Malaria Eradication Explorer | WHO European Region | 2000–2015",
+  p("Malaria Eradication Explorer | WHO European Region | 2000–2015",
     style = "text-align:center;color:#8F849F;padding:20px;"
   )
 )
@@ -439,8 +438,7 @@ server <- function(input, output, session) {
     )
 
     graph_layout(
-      p,
-      "Estimated Malaria Cases: Europe vs. Available Countries",
+      p,"Estimated Malaria Cases: Europe vs. Available Countries",
       "Estimated Cases (logarithmic scale)"
     ) %>%
       layout(yaxis = list(
