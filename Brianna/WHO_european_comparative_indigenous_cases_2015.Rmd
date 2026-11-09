@@ -44,9 +44,14 @@ global_cases <- global_raw %>%
 europe_cases <- europe_raw %>%
   transmute(
     iso3 = SpatialDimValueCode,
-    country = country,
-    year = as.integer(year),
+    europe_cases <- europe_raw %>%
+  transmute(
+    iso3 = SpatialDimValueCode,
+    country = Location,
+    year = as.integer(Period),
     cases = as.numeric(FactValueNumeric)
+  ) %>%
+  filter(year >= 2000, year <= 2015)
   ) %>%
   filter(year >= 2000, year <= 2015)
 
@@ -76,7 +81,7 @@ case_palette <- colorNumeric(
 
 
 ```{r draw-map} 
-id="mapfunc01"
+
 europe_iso3 <- c(
   "ALB", "AND", "ARM", "AUT", "AZE", "BLR", "BEL",
   "BIH", "BGR", "HRV", "CYP", "CZE", "DNK", "EST",
@@ -116,7 +121,7 @@ draw_malaria_map <- function(selected_year) {
           "No estimate available",
           format(round(cases), big.mark = ",")
         ),
-        " Estimated Eases"
+        " Estimated Cases"
       ),
       highlightOptions = highlightOptions(
         weight = 4,
@@ -160,9 +165,6 @@ draw_malaria_map <- function(selected_year) {
 }
 ```
 
-
-
-
 ```{r year-selector, echo=FALSE}
 selectInput(
   inputId = "year",
@@ -171,6 +173,7 @@ selectInput(
   selected = 2015
 )
 ```
+
 
 ## Interactive malaria maps {.tabset}
 
@@ -314,7 +317,7 @@ ui <- fluidPage(
               "Azerbaijan was certified malaria-free by WHO."),
             p(
               style = "color:#B9B1C9;font-size:12px;",
-              "Milestones describe indigenous transmission, not estimated-case shading."
+              "Milestones describe indigenous transmission, and not the number of estimated cases."
             )
           )
         )
@@ -330,8 +333,8 @@ ui <- fluidPage(
         class = "info-box",
         h4("Understanding the Map"),
         p(
-          "The map displays estimated malaria cases across the WHO European Region
-           from 2000 to 2015. Use the year slider to explore changes over time.
+          "This map displays estimated malaria cases across the WHO European Region
+           from 2000 to 2015. Use the year slider to observe recorded changes over time.
            Azerbaijan is highlighted, and hovering over a country displays its
            estimated case count."
         )
