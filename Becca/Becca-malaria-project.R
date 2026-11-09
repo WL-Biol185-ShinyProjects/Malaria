@@ -1,12 +1,6 @@
 # 1.  Install and load these packages once if needed
-install.packages<-c("tidyverse",
-                   "readxl", 
-                   "janitor",
-                   "sf",
-                   "rnaturalearth",
-                   "leaflet",
-                   "htmltools")
 
+library(shiny)
 library(tidyverse)
 library(readxl)
 library(janitor)
@@ -15,19 +9,15 @@ library(rnaturalearth)
 library(leaflet)
 library(htmltools)
 
+
 # 2. Import the WHO Excel file
 who <- read_excel(
   "Becca/MTM_THERAPEUTIC_EFFICACY_STUDY_20261012.xlsx",
   sheet = "Data"
 ) |>
   clean_names()
+who_cache <- "data/who_clean.rds"   # fast-loading copy of the cleaned data
 
-
-# Inspect the dataset
-dim(who)
-names(who)
-glimpse(who)
-summary(who)
 
 # Which parasite species are represented?
 who |>
