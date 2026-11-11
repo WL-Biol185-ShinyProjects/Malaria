@@ -1,4 +1,3 @@
-
 # WHO therapeutic efficacy studies: Shiny app
 
 library(shiny)
@@ -62,7 +61,7 @@ if (length(missing_cols) > 0) {
        "\nCheck the column names after clean_names().")
 }
 
-#2. Things computed once
+# 2. Things computed once
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
 species_choices <- sort(unique(na.omit(who$plasmodium_species)))
@@ -101,65 +100,109 @@ map_theme <- theme_minimal(base_size = 12) +
     plot.margin = margin(15, 20, 15, 15)
   )
 
+filter_note <- helpText("Uses the filters on the Resistance and Mutations tab.")
 
-#3. User interface 
+
+# 3. User interface
 ui <- fluidPage(
   titlePanel("Treatment Outcomes"),
   
-  sidebarLayout(
-    sidebarPanel(
-      width = 3,
-      selectizeInput("species", "Parasite species",
-                     choices = species_choices, selected = default_species,
-                     multiple = TRUE),
-      selectizeInput("drugs", "Drug", choices = drug_choices, multiple = TRUE,
-                     options = list(placeholder = "All drugs")),
-      selectizeInput("countries", "Country", choices = country_choices,
-                     multiple = TRUE,
-                     options = list(placeholder = "All countries")),
-      sliderInput("years", "Study start year",
-                  min = year_range[1], max = year_range[2],
-                  value = year_range, step = 1, sep = ""),
-      selectInput("measure", "Outcome shown on the maps",
-                  choices = measure_choices),
-      sliderInput("cap", "Color scale maximum (%)",
-                  min = 10, max = 100, value = 50, step = 5),
-      checkboxInput("crop", "Crop static maps to the study region", value = TRUE),
-      hr(),
-      textOutput("n_shown"),
-      helpText("Records with a missing start year are excluded. ",
-               "Each record is a row in the WHO database, not necessarily a separate study.")
+  tabsetPanel(
+    id = "main_tabs",
+    
+    # ---- Main page: Treatment ----
+    tabPanel(
+      "Treatment",
+      br(),
+      fluidRow(
+        column(
+          width = 9, offset = 2,
+          div(
+            style = "font-size: 1.05em; line-height: 1.6;",
+            h3("Treatment"),
+            
+            p("Upon diagnosis by a physician, malaria is often treated with antimalarial drugs such as Chloroquine phosphate and Artemisinin-based combination therapies (ACTs)."),
+            
+            p("Chloroquine phosphate is one of the older drugs often chosen to fight many parasites. However, this has led to drug resistance and reduced efficacy; therefore, it is not commonly used for",
+              em("P. falciparum"), "treatment."),
+            
+            p("ACTs are a combination of drugs that fight malaria in two different ways. This is the preferred treatment with better efficacy. An ACT pairs a fast-acting artemisinin derivative with a slower, longer-lasting partner drug. Artemisinin\u2019s main role is to rapidly kill the main malaria parasite in the red blood cells. The partner drug acts as a longer-lasting drug that also helps prevent drug resistance. Examples of ACTs include artemether-lumefantrine (Coartem) and artesunate-mefloquine."),
+            
+            p("Other common drugs include Atovaquone-proguanil (Malarone), Quinine sulfate (Qualaquin) with doxycycline (Oracea, Vibramycin, others), Primaquine phosphate."),
+            
+            p("However, treatment for malaria depends on the parasitic species, the severity of the illness, the patient\u2019s age, and pregnancy status. Overall, according to the CDC, the current treatment for those in the US is artemether-lumefantrine for a duration of 5 days (10 doses) to treat",
+              em("Plasmodium falciparum"),
+              "malaria, both for the treatment of uncomplicated infections and following IV artesunate for severe infections. WHO recommends an ACT based on therapeutic efficacy studies against local parasites. These include the following combinations:"),
+            
+            tags$ul(
+              tags$li("artemether-lumefantrine (AL)"),
+              tags$li("artesunate-amodiaquine"),
+              tags$li("artesunate-mefloquine"),
+              tags$li("dihydroartemisinin-piperaquine"),
+              tags$li("artesunate-sulfadoxine-pyrimethamine"),
+              tags$li("artesunate-pyronaridine, which WHO formally recommended in November 2022")
+            ),
+            
+            helpText("This page is general information, not medical advice. Treatment should follow a clinician and current national guidance.")
+          )
+        )
+      )
     ),
     
-    mainPanel(
-      width = 9,
-      tabsetPanel(
-        tabPanel("WHO therapeutic efficacy studies", br(),
-                 leafletOutput("leaf", height = 600)),
-        
-        tabPanel("Treatment outcome map", br(),
-                 plotOutput("plot_outcome", height = 560),
-                 br(), downloadButton("dl_outcome", "Download PNG")),
-        
-        tabPanel("Study locations", br(),
-                 plotOutput("plot_sites", height = 560),
-                 br(), downloadButton("dl_sites", "Download PNG")),
-        
-        tabPanel("Studies by year", br(),
-                 plotOutput("plot_years", height = 450),
-                 br(), downloadButton("dl_years", "Download PNG")),
-        
-        tabPanel("Drug summary", br(),
-                 tableOutput("drug_summary"),
-                 br(), downloadButton("dl_summary", "Download CSV")),
-        
-        tabPanel("Dataset overview", br(),
-                 h4("Parasite species (all records)"),
-                 tableOutput("species_table"),
-                 h4("Most common drugs (all records)"),
-                 tableOutput("drug_table"))
+    # ---- Project info: filters + interactive map ----
+    tabPanel(
+      "Resistance and Mutations",
+      br(),
+      sidebarLayout(
+        sidebarPanel(
+          width = 3,
+          selectizeInput("species", "Parasite species",
+                         choices = species_choices, selected = default_species,
+                         multiple = TRUE),
+          selectizeInput("drugs", "Drug", choices = drug_choices, multiple = TRUE,
+                         options = list(placeholder = "All drugs")),
+          selectizeInput("countries", "Country", choices = country_choices,
+                         multiple = TRUE,
+                         options = list(placeholder = "All countries")),
+          sliderInput("years", "Study start year",
+                      min = year_range[1], max = year_range[2],
+                      value = year_range, step = 1, sep = ""),
+          selectInput("measure", "Outcome shown on the maps",
+                      choices = measure_choices),
+          sliderInput("cap", "Color scale maximum (%)",
+                      min = 10, max = 100, value = 50, step = 5),
+          checkboxInput("crop", "Crop static maps to the study region", value = TRUE),
+          hr(),
+          textOutput("n_shown"),
+          helpText("Records with a missing start year are excluded. ",
+                   "Each record is a row in the WHO database, not necessarily a separate study.")
+        ),
+        mainPanel(
+          width = 9,
+          leafletOutput("leaf", height = 600)
+        )
       )
-    )
+    ),
+    
+    tabPanel("Threats to Controlling Malaria", br(),
+             filter_note,
+             plotOutput("plot_sites", height = 560),
+             br(), downloadButton("dl_sites", "Download PNG")),
+    
+    tabPanel("Project Drug summary", br(),
+             filter_note,
+             tableOutput("drug_summary"),
+             br(), downloadButton("dl_summary", "Download CSV")),
+    
+    tabPanel("Project Dataset overview", br(),
+             h4("Studies by year"),
+             filter_note,
+             plotOutput("plot_years", height = 400),
+             br(), downloadButton("dl_years", "Download PNG"),
+             h4("Parasite species (all records)"),
+             tableOutput("species_table"),
+             h4("Most common drugs (all records)"),
+             tableOutput("drug_table"))
   )
 )
 
@@ -343,8 +386,6 @@ server <- function(input, output, session) {
     function(file) ggsave(file, plot = p(), width = w, height = h,
                           units = "in", dpi = 300)
   }
-  output$dl_outcome <- downloadHandler("treatment_outcome_map.png",
-                                       save_png(plot_outcome, 12, 6))
   output$dl_sites   <- downloadHandler("study_locations_map.png",
                                        save_png(plot_sites, 12, 6))
   output$dl_years   <- downloadHandler("studies_by_year.png",
@@ -355,5 +396,7 @@ server <- function(input, output, session) {
   )
 }
 
+# Run app
 shinyApp(ui = ui, 
          server = server)
+
