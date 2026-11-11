@@ -20,12 +20,12 @@ library(ggplot2)
 library(bslib)
 
 global_raw <- read_csv(
-  "Brianna/estimated_number_of_malaria_cases_2000-2015.csv",
+  "estimated_number_of_malaria_cases_2000-2015.csv",
   show_col_types = FALSE
 )
 
 europe_raw <- read_csv(
-  "Brianna/estimated_number_of_WHO_europe_malaria_cases_2000-2015.csv",
+  "estimated_number_of_WHO_europe_malaria_cases_2000-2015.csv",
   show_col_types = FALSE
 )
 
@@ -586,15 +586,15 @@ server <- function(input, output, session) {
       aes(x = year, y = cases)
     ) +
 
-      geom_line(
-        color = "#B536A0",
-        linewidth = 1.2
-      ) +
-
+     geom_line(
+       color = "#FF3CAC",
+       linewidth = 1.2
+    ) +
+    
       geom_point(
-        color = "#FF3CAC",
+        color = "#FFD166",
         size = 2
-      ) +
+    ) +
 
       scale_x_continuous(
         breaks = 2000:2015
