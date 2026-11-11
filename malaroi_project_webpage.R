@@ -1,10 +1,16 @@
 library(shiny)
-
+library(bslib)
 
 ui <- navbarPage(
-  title = "Malaria | Past & Present"
-  theme = #insert colors here!,
-    
+  title = "Malaria | Past & Present",
+    theme = bs_theme(
+      version = 5, 
+      bootswatch = "sandstone",
+      bg = "#312c54",        
+      fg = "#FFADE5",        
+      secondary = "#B193CC", 
+      success = "#890f63"    
+    ),
   tabPanel("Home Page",
            fluidPage(
              h1("global Malaria Research Project"),
@@ -13,7 +19,7 @@ ui <- navbarPage(
   navbarMenu("What is Malaria?", 
              tabPanel("Symptions", 
                       fluidPage(
-                        h3("Clinical Symptoms of Malaria")
+                        h3("Clinical Symptoms of Malaria"),
                         p("this is where you insert the paragraphs and such")
                       )),
              tabPanel("Vecot transmission & Pathology", 
@@ -23,7 +29,7 @@ ui <- navbarPage(
                       )),
              tabPanel("history of Malaria",
                       fluidPage(
-                        h3("Historical Context")
+                        h3("Historical Context"),
                         p("this is where you insert the paragraph and such")
                       )),
              tabPanel("Location Frequency",

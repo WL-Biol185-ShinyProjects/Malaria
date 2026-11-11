@@ -4,8 +4,6 @@ library(shiny)
 library(tidyverse)
 library(readxl)
 library(janitor)
-library(sf)
-library(rnaturalearth)
 library(leaflet)
 library(htmltools)
 
@@ -62,8 +60,6 @@ if (length(missing_cols) > 0) {
 }
 
 # 2. Things computed once
-world <- ne_countries(scale = "medium", returnclass = "sf")
-
 species_choices <- sort(unique(na.omit(who$plasmodium_species)))
 default_species <- species_choices[str_detect(str_to_lower(species_choices), "falciparum")]
 if (length(default_species) == 0) default_species <- species_choices
@@ -82,23 +78,6 @@ measure_choices <- measure_choices[measure_choices %in% names(who)]
 # Overview tables for the whole dataset
 species_counts <- who |> count(plasmodium_species, sort = TRUE)
 drug_counts    <- who |> count(drug_name, sort = TRUE) |> slice_head(n = 30)
-
-crop_x <- c(-90, 165)
-crop_y <- c(-35, 42)
-
-whole_breaks <- function(x) {
-  b <- pretty(x, n = 4)
-  b[b == round(b) & b >= 1]
-}
-
-map_theme <- theme_minimal(base_size = 12) +
-  theme(
-    plot.title = element_text(face = "bold", size = 15),
-    plot.subtitle = element_text(size = 10),
-    legend.position = "right",
-    plot.title.position = "plot",
-    plot.margin = margin(15, 20, 15, 15)
-  )
 
 filter_note <- helpText("Uses the filters on the Resistance and Mutations tab.")
 
@@ -149,6 +128,45 @@ ui <- fluidPage(
       )
     ),
     
+    # ---- Threats to controlling malaria (second tab) ----
+    tabPanel(
+      "Threats to Controlling Malaria",
+      br(),
+      fluidRow(
+        column(
+          width = 8, offset = 2,
+          div(
+            style = "font-size: 1.05em; line-height: 1.6;",
+            h3("Threats to Controlling Malaria"),
+            
+            p("According to WHO, there are four major biological threats to controlling malaria: invasive vector species, vector insecticide resistance, antimalarial drug efficacy and resistance, and parasite pfhrp2/3 gene deletions."),
+            
+            h4("1. Invasive Vector Species"),
+            p("The issue with invasive vector species is that they may adapt to changing environments by altering their behavior patterns. Additionally, they may also become insecticide-resistant when exposed to current vector control interventions (WHO)."),
+            p("It is recommended by WHO for malaria-endemic countries to engage in entomological surveillance systems to provide the critical information needed in designing and implementing vector control strategies. This includes understanding of vector species\u2019 breeding and resting habitats, behaviors, feeding preferences, and resistance status to prevent the spread (WHO)."),
+            
+            h4("2. Vector Insecticide Resistance"),
+            tags$blockquote("\u201cBetween 2010 and 2020, 88 countries, of which 85 are currently malaria-endemic, reported insecticide resistance data for Anopheles mosquitoes to WHO.\u201d"),
+            tags$blockquote("\u201cResistance has been found in vectors from all six WHO regions and to all four classes of insecticide that have been widely used in adult malaria vector control.\u201d"),
+            p("To control the spread of mosquitoes, vector control interventions heavily rely on large-scale use of insecticides such as insecticide-treated nets (ITNs) and indoor residual insecticide spraying. Resistance (due to mutation) is a major concern, particularly for pyrethroids, an insecticide class that is commercially available and often utilized (WHO). This has been detected greatly in Western Africa. Resistance to neonicotinoids and the pyrrole insecticide chlorfenapyr (more recently introduced insecticides) has not yet been confirmed and may be an alternative solution until resistance grows; however, this will be more costly."),
+            p("WHO recommends enhanced insecticide monitoring and its impact on vector control. It is recommended that all malaria-endemic countries conduct tests once a year on insecticides from all classes in use or planned to be used on all major vector species from the different eco-epidemiological zones. Especially as there are relatively few data in regions other than Africa, such as South-East Asia."),
+            
+            h4("3. Antimalarial Drug Efficacy and Resistance"),
+            p("One of the biggest obstacles in the fight against malaria has been drug resistance. Drug efficacy is monitored through therapeutic efficacy studies (TES). This tracks clinical and parasitological outcomes among patients receiving antimalarial treatment. High treatment failure rates were detected with dihydroartemisinin-piperaquine (DHA-PPQ) in the Western Pacific Region, such as in Cambodia, the Lao People\u2019s Democratic Republic, and Viet Nam."),
+            p("These studies are highly recommended as they promote changes in the use of medicine to ensure patients receive effective treatment."),
+            p("Artemisinin partial resistance is monitored using an established list of validated and candidate PfKelch13 markers associated with delayed clearance after a treatment containing artemisinin. These PfKelch13 mutations have emerged consistently in Eritrea, Rwanda and Uganda. However, there is an effective partner drug, resulting in a treatment failure rate below 10%. Other areas in which this mutation is highly prevalent are Cambodia, the Lao People\u2019s Democratic Republic and Viet Nam."),
+            
+            h4("4. Parasite pfhrp2/3 Gene Deletions"),
+            p("The malaria parasite may have gene deletions in important markers for detection. This leads to false-negative diagnostic test results (RDTs). The rapid diagnostic test used to diagnose",
+              em("Plasmodium falciparum"),
+              "heavily relies on RDTs that target an antigen called histidine-rich protein 2 (HRP2), as well as some cross-reactivity with HRP3, a structurally similar parasite protein. It has been found that",
+              em("P. falciparum"),
+              "parasites lack the pfhrp2 gene that the RDTs target. This was first identified in Peru in 2010.")
+          )
+        )
+      )
+    ),
+    
     # ---- Project info: filters + interactive map ----
     tabPanel(
       "Resistance and Mutations",
@@ -167,11 +185,10 @@ ui <- fluidPage(
           sliderInput("years", "Study start year",
                       min = year_range[1], max = year_range[2],
                       value = year_range, step = 1, sep = ""),
-          selectInput("measure", "Outcome shown on the maps",
+          selectInput("measure", "Outcome shown on the map",
                       choices = measure_choices),
           sliderInput("cap", "Color scale maximum (%)",
                       min = 10, max = 100, value = 50, step = 5),
-          checkboxInput("crop", "Crop static maps to the study region", value = TRUE),
           hr(),
           textOutput("n_shown"),
           helpText("Records with a missing start year are excluded. ",
@@ -184,25 +201,23 @@ ui <- fluidPage(
       )
     ),
     
-    tabPanel("Threats to Controlling Malaria", br(),
-             filter_note,
-             plotOutput("plot_sites", height = 560),
-             br(), downloadButton("dl_sites", "Download PNG")),
+    tabPanel(
+      "Project Drug summary",
+      br(),
+      filter_note,
+      tableOutput("drug_summary"),
+      br(),
+      downloadButton("dl_summary", "Download CSV")
+    ),
     
-    tabPanel("Project Drug summary", br(),
-             filter_note,
-             tableOutput("drug_summary"),
-             br(), downloadButton("dl_summary", "Download CSV")),
-    
-    tabPanel("Project Dataset overview", br(),
-             h4("Studies by year"),
-             filter_note,
-             plotOutput("plot_years", height = 400),
-             br(), downloadButton("dl_years", "Download PNG"),
-             h4("Parasite species (all records)"),
-             tableOutput("species_table"),
-             h4("Most common drugs (all records)"),
-             tableOutput("drug_table"))
+    tabPanel(
+      "Project Dataset overview",
+      br(),
+      h4("Parasite species (all records)"),
+      tableOutput("species_table"),
+      h4("Most common drugs (all records)"),
+      tableOutput("drug_table")
+    )
   )
 )
 
@@ -286,68 +301,6 @@ server <- function(input, output, session) {
       )
   })
   
-  # ---- Static outcome map ----
-  plot_outcome <- reactive({
-    d <- outcome_data()
-    validate(need(nrow(d) > 0, "No records with coordinates and this outcome match the filters."))
-    cap <- input$cap
-    lab <- measure_label()
-    
-    ggplot() +
-      geom_sf(data = world, fill = "grey95", color = "grey75", linewidth = 0.2) +
-      geom_point(data = d,
-                 aes(x = longitude, y = latitude, color = value),
-                 size = 2, alpha = 0.75) +
-      scale_color_viridis_c(option = "C", limits = c(0, cap),
-                            oob = scales::squish, name = lab) +
-      coord_sf(xlim = if (input$crop) crop_x, ylim = if (input$crop) crop_y,
-               expand = FALSE, default_crs = st_crs(4326)) +
-      labs(title = paste("Global distribution:", tolower(lab)),
-           subtitle = paste0("WHO therapeutic efficacy studies; values above ", cap,
-                             "% shown in the top color"),
-           caption = "Source: WHO therapeutic efficacy study database. Each point is one study record.",
-           x = NULL, y = NULL) +
-      map_theme
-  })
-  output$plot_outcome <- renderPlot(plot_outcome())
-  
-  # ---- Study locations ----
-  plot_sites <- reactive({
-    d <- geo() |>
-      count(longitude, latitude, name = "number_of_records") |>
-      arrange(desc(number_of_records))
-    validate(need(nrow(d) > 0, "No records with coordinates match the filters."))
-    
-    ggplot() +
-      geom_sf(data = world, fill = "grey95", color = "grey75", linewidth = 0.2) +
-      geom_point(data = d,
-                 aes(x = longitude, y = latitude, size = number_of_records),
-                 color = "firebrick", alpha = 0.55) +
-      scale_size_area(max_size = 7, breaks = whole_breaks,
-                      name = "Records at\ncoordinate") +
-      coord_sf(xlim = if (input$crop) crop_x, ylim = if (input$crop) crop_y,
-               expand = FALSE, default_crs = st_crs(4326)) +
-      labs(title = "Global distribution of malaria efficacy studies",
-           subtitle = "Circle size represents the number of records at each coordinate",
-           caption = "Source: WHO therapeutic efficacy study database",
-           x = NULL, y = NULL) +
-      map_theme
-  })
-  output$plot_sites <- renderPlot(plot_sites())
-  
-  # ---- Studies by year ----
-  plot_years <- reactive({
-    d <- filtered() |> count(year_start)
-    validate(need(nrow(d) > 0, "No records match the filters."))
-    
-    ggplot(d, aes(x = year_start, y = n)) +
-      geom_col() +
-      labs(title = "WHO therapeutic efficacy studies by year",
-           x = "Study start year", y = "Number of records") +
-      theme_minimal(base_size = 12)
-  })
-  output$plot_years <- renderPlot(plot_years())
-  
   # ---- Drug summary ----
   drug_summary <- reactive({
     d <- filtered()
@@ -375,28 +328,17 @@ server <- function(input, output, session) {
   })
   output$drug_summary <- renderTable(drug_summary(), digits = 1, na = "")
   
+  output$dl_summary <- downloadHandler(
+    "drug_summary.csv",
+    function(file) write_csv(drug_summary(), file)
+  )
+  
   # ---- Overview tables ----
   output$species_table <- renderTable(
     species_counts |> rename(Species = plasmodium_species, Records = n))
   output$drug_table <- renderTable(
     drug_counts |> rename(Drug = drug_name, Records = n))
-  
-  # ---- Downloads ----
-  save_png <- function(p, w, h) {
-    function(file) ggsave(file, plot = p(), width = w, height = h,
-                          units = "in", dpi = 300)
-  }
-  output$dl_sites   <- downloadHandler("study_locations_map.png",
-                                       save_png(plot_sites, 12, 6))
-  output$dl_years   <- downloadHandler("studies_by_year.png",
-                                       save_png(plot_years, 9, 5))
-  output$dl_summary <- downloadHandler(
-    "drug_summary.csv",
-    function(file) write_csv(drug_summary(), file)
-  )
 }
 
 # Run app
-shinyApp(ui = ui, 
-         server = server)
-
+shinyApp(ui = ui, server = server)
