@@ -122,6 +122,8 @@ ui <- fluidPage(
               tags$li("artesunate-pyronaridine, which WHO formally recommended in November 2022")
             ),
             
+            p("The following diagram represents an algorith providers may use to diagnosis and treat Malaria as provided by the CDC. "),
+            
             div(style = "text-align: center;",
               
               img(src = "CDC Guidelines.png", style = "width:80%; height:auto; max-width:600px;")
