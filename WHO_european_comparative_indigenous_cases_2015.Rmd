@@ -1,0 +1,1049 @@
+---
+title: "2000-2015 WHO European Malaria Cases and Healthcare Resources"
+output: html_document
+runtime: shiny
+date: "2026-10-14"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+```{r load-data}
+# Packages
+library(shiny)
+library(leaflet)
+library(dplyr)
+library(readr)
+library(rnaturalearth)
+library(ggplot2)
+library(bslib)
+library(jsonlite)
+library(sf)
+
+# Read malaria data
+global_raw <- read_csv(
+  "estimated_number_of_malaria_cases_2000-2015.csv",
+  show_col_types = FALSE
+)
+
+europe_raw <- read_csv(
+  "estimated_number_of_WHO_europe_malaria_cases_2000-2015.csv",
+  show_col_types = FALSE
+)
+
+# Read medical doctor data
+doctors_raw <- read_csv(
+  "WHO_global_medical_doctors_per_10,000_(varying_year_ranges).csv",
+  show_col_types = FALSE
+)
+
+# Download population estimates from Our World in Data
+population_raw <- read.csv(
+  "https://ourworldindata.org/grapher/population-unwpp.csv?v=1&csvType=full&useColumnShortNames=true"
+)
+
+# Metadata is retained in case you need to check the population source later.
+population_metadata <- fromJSON(
+  "https://ourworldindata.org/grapher/population-unwpp.metadata.json?v=1&csvType=full&useColumnShortNames=true"
+)
+```
+
+```{r data-prep}
+# WHO European Region country ISO3 codes
+europe_iso3 <- c(
+  "ALB", "AND", "ARM", "AUT", "AZE", "BLR", "BEL",
+  "BIH", "BGR", "HRV", "CYP", "CZE", "DNK", "EST",
+  "FIN", "FRA", "GEO", "DEU", "GRC", "HUN", "ISL",
+  "IRL", "ISR", "ITA", "KAZ", "KGZ", "LVA", "LTU",
+  "LUX", "MLT", "MCO", "MNE", "NLD", "MKD", "NOR",
+  "POL", "PRT", "MDA", "ROU", "RUS", "SMR", "SRB",
+  "SVK", "SVN", "ESP", "SWE", "CHE", "TJK", "TUR",
+  "TKM", "UKR", "GBR", "UZB"
+)
+
+# Prepare global malaria data.
+# Summarising also protects the trend graph from duplicate country-year rows.
+global_cases <- global_raw %>%
+  transmute(
+    iso3 = as.character(SpatialDimValueCode),
+    country = as.character(Location),
+    year = as.integer(Period),
+    cases = as.numeric(FactValueNumeric)
+  ) %>%
+  filter(year >= 2000, year <= 2015) %>%
+  group_by(iso3, country, year) %>%
+  summarise(
+    cases = if (all(is.na(cases))) NA_real_ else mean(cases, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Prepare WHO European malaria data.
+# One row per country and year is important for the map join.
+europe_cases <- europe_raw %>%
+  transmute(
+    iso3 = as.character(SpatialDimValueCode),
+    country = as.character(country),
+    year = as.integer(year),
+    cases = as.numeric(FactValueNumeric)
+  ) %>%
+  filter(
+    iso3 %in% europe_iso3,
+    year >= 2000,
+    year <= 2015
+  ) %>%
+  group_by(iso3, country, year) %>%
+  summarise(
+    cases = if (all(is.na(cases))) NA_real_ else mean(cases, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Prepare available-country global trend.
+# This is not a complete global total unless every country is represented.
+global_trend <- global_cases %>%
+  group_by(year) %>%
+  summarise(
+    countries_with_data = sum(!is.na(cases)),
+    cases = if (all(is.na(cases))) NA_real_ else sum(cases, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Prepare WHO European Region trend.
+europe_trend <- europe_cases %>%
+  group_by(year) %>%
+  summarise(
+    countries_with_data = sum(!is.na(cases)),
+    cases = if (all(is.na(cases))) NA_real_ else sum(cases, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Prepare medical doctor data.
+# Values are medical doctors per 10,000 people.
+doctors_europe <- doctors_raw %>%
+  transmute(
+    iso3 = as.character(SpatialDimValueCode),
+    year = as.integer(Period),
+    doctors_per_10000 = as.numeric(FactValueNumeric)
+  ) %>%
+  filter(
+    iso3 %in% europe_iso3,
+    year >= 2000,
+    year <= 2015
+  ) %>%
+  group_by(iso3, year) %>%
+  summarise(
+    doctors_per_10000 = if (all(is.na(doctors_per_10000))) {
+      NA_real_
+    } else {
+      mean(doctors_per_10000, na.rm = TRUE)
+    },
+    .groups = "drop"
+  )
+
+# Prepare population data from the OWID download.
+population_data <- population_raw %>%
+  transmute(
+    iso3 = as.character(code),
+    year = as.integer(year),
+    population = as.numeric(
+      population__sex_all__age_all__variant_estimates
+    )
+  ) %>%
+  filter(
+    iso3 %in% europe_iso3,
+    year >= 2000,
+    year <= 2015
+  ) %>%
+  group_by(iso3, year) %>%
+  summarise(
+    population = if (all(is.na(population))) {
+      NA_real_
+    } else {
+      mean(population, na.rm = TRUE)
+    },
+    .groups = "drop"
+  )
+
+# Combine malaria cases, doctor availability, and population.
+resource_comparison <- europe_cases %>%
+  inner_join(
+    doctors_europe,
+    by = c("iso3", "year")
+  ) %>%
+  inner_join(
+    population_data,
+    by = c("iso3", "year")
+  ) %>%
+  mutate(
+    malaria_per_100000 = (cases / population) * 100000,
+    is_azerbaijan = iso3 == "AZE"
+  ) %>%
+  filter(
+    !is.na(cases),
+    !is.na(doctors_per_10000),
+    !is.na(malaria_per_100000),
+    !is.na(population),
+    population > 0
+  )
+
+# Prepare map boundaries.
+world <- ne_countries(
+  scale = "medium",
+  returnclass = "sf"
+) %>%
+  mutate(
+    iso3 = if_else(iso_a3 == "-99", adm0_a3, iso_a3)
+  ) %>%
+  select(iso3, name, geometry)
+
+# Map color palette.
+case_palette <- colorNumeric(
+  palette = c(
+    "#21113D",
+    "#63318E",
+    "#B536A0",
+    "#F15BB5",
+    "#FFD166"
+  ),
+  domain = europe_cases$cases,
+  na.color = "#30303A"
+)
+```
+
+```{r map-functions}
+# Prepare map data for the selected year.
+make_map_data <- function(selected_year) {
+
+  world %>%
+    filter(iso3 %in% europe_iso3) %>%
+    left_join(
+      europe_cases %>%
+        filter(year == as.integer(selected_year)),
+      by = "iso3"
+    ) %>%
+    mutate(
+      is_azerbaijan = iso3 == "AZE"
+    )
+}
+
+# Draw the malaria map.
+draw_malaria_map <- function(selected_year) {
+
+  map_data <- make_map_data(selected_year)
+
+  # Calculate Azerbaijan's label point in a projected coordinate system.
+  azerbaijan_label_point <- map_data %>%
+    filter(is_azerbaijan) %>%
+    sf::st_transform(6933) %>%
+    sf::st_point_on_surface() %>%
+    sf::st_transform(4326)
+
+  leaflet(
+    map_data,
+    options = leafletOptions(preferCanvas = TRUE)
+  ) %>%
+    addTiles() %>%
+    setView(lng = 35, lat = 48, zoom = 3) %>%
+    addPolygons(
+      group = "country-polygons",
+      layerId = ~iso3,
+      fillColor = ~case_palette(cases),
+      fillOpacity = 0.9,
+      color = ~ifelse(is_azerbaijan, "#FF3CAC", "#55515F"),
+      weight = ~ifelse(is_azerbaijan, 4, 0.8),
+      label = ~paste0(
+        name,
+        ifelse(is_azerbaijan, " - FOCUS COUNTRY", ""),
+        ": ",
+        ifelse(
+          is.na(cases),
+          "No estimate available",
+          format(round(cases), big.mark = ",")
+        ),
+        " Estimated Cases"
+      ),
+      highlightOptions = highlightOptions(
+        weight = 4,
+        color = "#FFD166",
+        bringToFront = TRUE
+      )
+    ) %>%
+    addLabelOnlyMarkers(
+      data = azerbaijan_label_point,
+      label = ~"AZERBAIJAN",
+      labelOptions = labelOptions(
+        noHide = TRUE,
+        direction = "top",
+        textOnly = TRUE,
+        style = list(
+          "color" = "#FF3CAC",
+          "font-weight" = "bold",
+          "font-size" = "12px",
+          "text-shadow" = "0 0 5px #000000"
+        )
+      )
+    ) %>%
+   addLegend(
+     position = "bottomright",
+     pal = case_palette,
+     values = europe_cases$cases,
+     title = "Estimated Cases",
+     na.label = "No estimate",
+     group = "case-legend"
+)
+}
+```
+
+```{r graph-functions}
+# Shared graph appearance.
+graph_theme <- function() {
+
+  theme_minimal() +
+    theme(
+      text = element_text(color = "#F5F5F7"),
+      plot.background = element_rect(
+        fill = "#111118",
+        color = NA
+      ),
+      panel.background = element_rect(
+        fill = "#111118",
+        color = NA
+      ),
+      panel.grid.major = element_line(color = "#30243F"),
+      panel.grid.minor = element_blank(),
+      axis.text = element_text(size  = 13, color = "#D9CDE8"),
+      axis.title = element_text(size = 15, color = "#D9CDE8"),
+      plot.title = element_text(
+        color = "#FF3CAC",
+        face = "bold",
+        size = 18
+      ),
+      plot.subtitle = element_text(size = 13, color = "#B9B1C9"),
+      plot.margin = margin(
+        t = 10,
+        r = 15,
+        b = 10,
+        l = 10
+      )
+    )
+}
+
+# Reusable function for the two malaria trend graphs.
+make_trend_plot <- function(data, graph_title) {
+
+  ggplot(
+    data,
+    aes(x = year, y = cases)
+  ) +
+    geom_line(
+      color = "#FF3CAC",
+      linewidth = 1.2,
+      na.rm = TRUE
+    ) +
+    geom_point(
+      color = "#FFD166",
+      size = 2.5,
+      na.rm = TRUE
+    ) +
+    scale_x_continuous(
+      breaks = 2000:2015,
+      limits = c(2000, 2015)
+    ) +
+    scale_y_continuous(
+      labels = scales::comma
+    ) +
+    labs(
+      title = graph_title,
+      x = "Year",
+      y = "Estimated Malaria Cases"
+    ) +
+    graph_theme()
+}
+```
+
+```{r dashboard}
+ui <- fluidPage(
+
+  theme = bs_theme(
+    bootswatch = "cyborg",
+    bg = "#050509",
+    fg = "#F5F5F7",
+    primary = "#FF3CAC",
+    secondary = "#7B2CBF"
+  ),
+
+  tags$head(
+    tags$style(HTML("
+      body {
+        background: #050509;
+      }
+
+      .dashboard-title {
+        color: #FF3CAC;
+        font-weight: 700;
+      }
+
+      .section-title {
+        color: #FF3CAC;
+        margin: 30px 0 15px;
+      }
+
+      .panel-card, .info-box {
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 22px;
+      }
+
+      .panel-card {
+        background: #111118;
+        border: 1px solid #30243F;
+      }
+
+      .info-box {
+        background: #171321;
+        border: 1px solid #49345E;
+        min-height: 170px;
+      }
+
+      .info-box h4 {
+        color: #FF3CAC;
+        margin-top: 0;
+      }
+
+      .nav-tabs > li.active > a {
+        background: #21113D !important;
+        color: #FF3CAC !important;
+      }
+
+      .nav-tabs > li > a {
+        color: #D9CDE8;
+      }
+
+      .control-label {
+        color: #F5F5F7;
+      }
+
+      .description {
+        color: #C5B8D8;
+        line-height: 1.6;
+      }
+    "))
+  ),
+
+  # Dashboard heading and year slider.
+  div(
+    class = "panel-card",
+
+    h1(
+      class = "dashboard-title",
+      "MALARIA ERADICATION EXPLORER"
+    ),
+
+    p("WHO European Region | 2000-2015"),
+
+    p(
+      "Explore Malaria trends across Europe, with a focus on Azerbaijan."
+    ),
+
+    sliderInput(
+      "year",
+      "Explore the year:",
+      min = 2000,
+      max = 2015,
+      value = 2000,
+      step = 1,
+      sep = "",
+      animate = animationOptions(
+        interval = 1000,
+        loop = TRUE
+      )
+    )
+  ),
+
+  # Map and Azerbaijan information.
+  h3(
+    "MALARIA ACROSS EUROPE",
+    class = "section-title"
+  ),
+
+  fluidRow(
+
+    column(
+      8,
+
+      div(
+        class = "panel-card",
+
+        h4("European Malaria Estimates"),
+
+        leafletOutput(
+          "malaria_map",
+          height = "610px"
+        )
+      )
+    ),
+
+    column(
+      4,
+
+      div(
+        class = "panel-card",
+
+        tabsetPanel(
+
+          tabPanel(
+            "Azerbaijan",
+            br(),
+            uiOutput("azerbaijan_summary")
+          ),
+
+          tabPanel(
+            "Trend",
+            br(),
+            plotOutput(
+              "az_trend",
+              height = "420px"
+            )
+          ),
+
+          tabPanel(
+            "Timeline",
+            br(),
+
+            h4("Key Milestones"),
+
+            p(
+              strong("2012"),
+              br(),
+              "Azerbaijan reported zero indigenous cases."
+            ),
+
+            p(
+              strong("2015"),
+              br(),
+              "The WHO European Region reached zero indigenous Malaria cases."
+            ),
+
+            p(
+              strong("2023"),
+              br(),
+              "Azerbaijan was certified Malaria-free by WHO."
+            ),
+
+            p(
+              style = "color:#B9B1C9;font-size:12px;",
+              "Milestones describe indigenous transmission, not the number of estimated cases."
+            )
+          )
+        )
+      )
+    )
+  ),
+
+  # Map explanation.
+  fluidRow(
+    column(
+      12,
+
+      div(
+        class = "info-box",
+
+        h4("Understanding the Map"),
+
+        p(
+          "This map displays estimated Malaria cases across the WHO European Region from 2000 to 2015. Use the year slider to observe changes over time. Azerbaijan is highlighted and hovering over a country displays its estimated case count."
+        )
+      )
+    )
+  ),
+
+  # Background and data information.
+  h3(
+    "BACKGROUND AND DATA",
+    class = "section-title"
+  ),
+
+  fluidRow(
+
+    column(
+      6,
+
+      div(
+        class = "info-box",
+
+        h4("Historical Context"),
+
+        p(
+          "Malaria elimination involved sustained public health efforts, including surveillance, prevention, diagnosis, and treatment. Azerbaijan provides an example of progress toward eliminating indigenous Malaria transmission."
+        )
+      )
+    ),
+
+    column(
+      6,
+
+      div(
+        class = "info-box",
+
+        h4("About the Data"),
+
+        p(
+          "The visualizations use WHO estimated Malaria case data. The available-country comparison sums estimates for countries included in the global dataset, rather than representing a complete global total."
+        )
+      )
+    )
+  ),
+
+  # Two malaria trend graphs displayed side by side.
+  h3(
+    "MALARIA CASES OVER TIME",
+    class = "section-title"
+  ),
+
+  p(
+    class = "description",
+    "Compare the available global Malaria estimates with estimates from the WHO European Region. The graphs use separate vertical scales so trends within each group are easier to see."
+  ),
+
+  fluidRow(
+
+    column(
+      6,
+
+      div(
+        class = "panel-card",
+
+        h4("Available Global Estimates"),
+
+        p(
+          class = "description",
+          "Combined estimates from countries included in the global dataset. This is not a complete global total."
+        ),
+
+        plotOutput(
+          "global_trend",
+          height = "380px"
+        )
+      )
+    ),
+
+    column(
+      6,
+
+      div(
+        class = "panel-card",
+
+        h4("WHO European Region"),
+
+        p(
+          class = "description",
+          "Combined estimated Malaria cases across countries in the WHO European Region."
+        ),
+
+        plotOutput(
+          "europe_trend",
+          height = "380px"
+        )
+      )
+    )
+  ),
+
+  # Healthcare resource comparison.
+  h3(
+    "HEALTHCARE RESOURCES AND MALARIA",
+    class = "section-title"
+  ),
+
+  div(
+    class = "panel-card",
+
+    h4("Healthcare Resources & Malaria Burden"),
+
+    p(
+      class = "description",
+      "This graph compares medical doctor availability with estimated Malaria cases per 100,000 people across WHO European Region countries. Each point represents one country in the selected year. Azerbaijan is highlighted in pink, and the trend line shows the overall relationship."
+    ),
+
+    plotOutput(
+      "resource_scatter",
+      height = "450px"
+    ),
+
+    br(),
+
+    h4("What does the relationship show?"),
+
+    p(
+      class = "description",
+      textOutput("resource_description")
+    ),
+
+    p(
+      class = "description",
+      "Important: Doctors per 10,000 people measures healthcare workforce availability, not general healthcare access, such as affordability, distance to resources, or care distribution. Malaria cases per 100,000 total population is a calculated comparison measure, not the WHO Malaria incidence rate per 100,000 people at risk. Further information is necessary to establish a causal relationship."
+    )
+  ),
+
+  # Footer.
+  p(
+    "Malaria Eradication Explorer | WHO European Region | 2000-2015",
+    style = "text-align:center;color:#8F849F;padding:20px;"
+  )
+)
+```
+
+```{r server}
+server <- function(input, output, session) {
+
+  # Remember the map data from the initial year.
+  previous_map_data <- reactiveVal(make_map_data(2000))
+
+  # Draw the initial map once.
+  output$malaria_map <- renderLeaflet({
+    draw_malaria_map(2000)
+  })
+
+  # Update only countries whose estimates have changed.
+  observeEvent(input$year, {
+
+    map_data <- make_map_data(input$year)
+    old_data <- previous_map_data()
+
+    # Find countries whose case estimates changed.
+    old_cases <- old_data$cases[
+      match(map_data$iso3, old_data$iso3)
+    ]
+
+    changed <- is.na(map_data$cases) != is.na(old_cases)
+
+    both_present <- !is.na(map_data$cases) &
+                    !is.na(old_cases)
+
+    changed[both_present] <-
+      map_data$cases[both_present] != old_cases[both_present]
+
+    changed[is.na(changed)] <- FALSE
+
+    # Only redraw countries that need updating.
+    changed_data <- map_data[changed, ]
+
+    if (nrow(changed_data) > 0) {
+
+      leafletProxy("malaria_map") %>%
+        removeShape(
+          layerId = changed_data$iso3
+        ) %>%
+        addPolygons(
+          data = changed_data,
+          group = "country-polygons",
+          layerId = ~iso3,
+          fillColor = ~case_palette(cases),
+          fillOpacity = 0.9,
+          color = ~ifelse(
+            is_azerbaijan,
+            "#FF3CAC",
+            "#55515F"
+          ),
+          weight = ~ifelse(
+            is_azerbaijan,
+            4,
+            0.8
+          ),
+          label = ~paste0(
+            name,
+            ifelse(is_azerbaijan, " - FOCUS COUNTRY", ""),
+            ": ",
+            ifelse(
+              is.na(cases),
+              "No estimate available",
+              format(round(cases), big.mark = ",")
+            ),
+            " Estimated Cases"
+          ),
+          highlightOptions = highlightOptions(
+            weight = 4,
+            color = "#FFD166",
+            bringToFront = TRUE
+          )
+        )
+    }
+
+    # Save the current year for the next comparison.
+    previous_map_data(map_data)
+
+  }, ignoreInit = TRUE)
+
+
+  # Available-country global trend graph.
+  output$global_trend <- renderPlot({
+    make_trend_plot(
+      data = global_trend,
+      graph_title = "Available Global Malaria Estimates"
+    )
+  })
+
+
+  # WHO European Region trend graph.
+  output$europe_trend <- renderPlot({
+    make_trend_plot(
+      data = europe_trend,
+      graph_title = "WHO European Region Malaria Estimates"
+    )
+  })
+
+
+  # Azerbaijan summary.
+  output$azerbaijan_summary <- renderUI({
+
+    az <- europe_cases %>%
+      filter(
+        iso3 == "AZE",
+        year == as.integer(input$year)
+      )
+
+    if (nrow(az) == 0 || is.na(az$cases[1])) {
+      return(
+        p("No estimate available for this year.")
+      )
+    }
+
+    tagList(
+
+      h4(
+        "AZERBAIJAN",
+        style = "color:#FF3CAC;"
+      ),
+
+      h2(
+        format(
+          round(az$cases[1]),
+          big.mark = ","
+        ),
+        style = "color:#FFD166;"
+      ),
+
+      p("Estimated Malaria Cases"),
+
+      p(
+        paste(
+          "Selected year:",
+          input$year
+        )
+      )
+    )
+  })
+
+
+  # Azerbaijan trend graph.
+  output$az_trend <- renderPlot({
+
+    az <- europe_cases %>%
+      filter(iso3 == "AZE") %>%
+      arrange(year)
+
+    make_trend_plot(
+      data = az,
+      graph_title = "Azerbaijan: Estimated Malaria Cases"
+    )
+  })
+
+
+  # Healthcare resources vs. malaria scatter plot.
+  output$resource_scatter <- renderPlot({
+
+    plot_data <- resource_comparison %>%
+      filter(year == as.integer(input$year))
+
+    # Show a message instead of attempting to draw an inadequate graph.
+    if (nrow(plot_data) < 3) {
+      return(
+        ggplot() +
+          annotate(
+            "text",
+            x = 0,
+            y = 0,
+            label = "Not enough countries have matching data for this year.",
+            color = "#D9CDE8",
+            size = 4
+          ) +
+          xlim(-1, 1) +
+          ylim(-1, 1) +
+          labs(
+            title = paste(
+              "Healthcare Resources vs. Malaria Burden:",
+              input$year
+            )
+          ) +
+          graph_theme() +
+          theme(
+            axis.title = element_blank(),
+            axis.text = element_blank(),
+            panel.grid = element_blank()
+          )
+      )
+    }
+
+    ggplot(
+      plot_data,
+      aes(
+        x = doctors_per_10000,
+        y = malaria_per_100000
+      )
+    ) +
+
+      # Overall trend line.
+      geom_smooth(
+        method = "lm",
+        formula = y ~ x,
+        color = "#FF3CAC",
+        linewidth = 1.2,
+        se = FALSE
+      ) +
+
+      # Country points.
+      geom_point(
+        aes(color = is_azerbaijan),
+        size = 3,
+        alpha = 0.85
+      ) +
+
+      # Label Azerbaijan only when it is present in the selected year.
+      geom_text(
+        data = plot_data %>%
+          filter(is_azerbaijan),
+        aes(label = "Azerbaijan"),
+        color = "#FF3CAC",
+        nudge_x = 0.1,
+        hjust = 0,
+        size = 4,
+        show.legend = FALSE
+      ) +
+
+      scale_color_manual(
+        values = c(
+          "FALSE" = "#FFD166",
+          "TRUE" = "#FF3CAC"
+        ),
+        labels = c(
+          "FALSE" = "Other countries",
+          "TRUE" = "Azerbaijan"
+        ),
+        name = "Country"
+      ) +
+
+      scale_x_continuous(
+        labels = scales::comma
+      ) +
+
+      scale_y_continuous(
+        labels = scales::comma
+      ) +
+
+      labs(
+        title = paste(
+          "Healthcare Resources vs. Malaria Burden:",
+          input$year
+        ),
+        x = "Medical Doctors per 10,000 People",
+        y = "Estimated Malaria Cases per 100,000 People"
+      ) +
+
+     graph_theme() +
+
+      theme(
+        legend.text = element_text(
+          size = 15,
+          color = "#D9CDE8"
+        ),
+        legend.title = element_text(
+          size = 16,
+          color = "#D9CDE8"
+        )
+      )
+  })
+
+
+  # Dynamic correlation description.
+  output$resource_description <- renderText({
+
+    plot_data <- resource_comparison %>%
+      filter(year == as.integer(input$year))
+
+    if (nrow(plot_data) < 3) {
+      return(
+        "There is not enough matching country data to calculate a correlation for this year."
+      )
+    }
+
+    # Remove any remaining incomplete observations.
+    plot_data <- plot_data %>%
+      filter(
+        is.finite(doctors_per_10000),
+        is.finite(malaria_per_100000)
+      )
+
+    if (
+      nrow(plot_data) < 3 ||
+      length(unique(plot_data$doctors_per_10000)) < 2 ||
+      length(unique(plot_data$malaria_per_100000)) < 2
+    ) {
+      return(
+        "A correlation cannot be calculated because there are too few complete observations or one variable has insufficient variation."
+      )
+    }
+
+    correlation <- cor(
+      plot_data$doctors_per_10000,
+      plot_data$malaria_per_100000,
+      use = "complete.obs",
+      method = "pearson"
+    )
+
+    if (is.na(correlation)) {
+      return(
+        "A correlation could not be calculated for this year."
+      )
+    }
+
+    strength <- if (abs(correlation) < 0.3) {
+      "weak"
+    } else if (abs(correlation) < 0.7) {
+      "moderate"
+    } else {
+      "strong"
+    }
+
+    direction <- if (correlation < 0) {
+      "negative"
+    } else if (correlation > 0) {
+      "positive"
+    } else {
+      "near-zero"
+    }
+
+    paste0(
+      "For ",
+      input$year,
+      ", the relationship between number of medical doctors and Malaria cases is ",
+      strength,
+      " and ",
+      direction,
+      ". Pearson correlation: ",
+      round(correlation, 2),
+      ". This describes an association, meaning it is not evidence that doctor availability causes changes in Malaria cases. The comparison includes ",
+      nrow(plot_data),
+      " countries with matching data."
+    )
+  })
+
+}
+
+shinyApp(
+  ui = ui,
+  server = server
+)
+```
