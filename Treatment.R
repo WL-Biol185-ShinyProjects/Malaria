@@ -122,6 +122,13 @@ ui <- fluidPage(
               tags$li("artesunate-pyronaridine, which WHO formally recommended in November 2022")
             ),
             
+            div(style = "text-align: center;",
+              
+              img(src = "CDC Guidelines.png", style = "width:80%; height:auto; max-width:600px;")
+            ),
+            
+            p("SOURCE: CDC Malaria Diagnosis & Treatment in the U.S. ", style= "font-size: 0.70em"),
+            
             helpText("This page is general information, not medical advice. Treatment should follow a clinician and current national guidance.")
           )
         )
@@ -160,7 +167,7 @@ ui <- fluidPage(
             h4("3. Antimalarial Drug Efficacy and Resistance"),
             p("One of the biggest obstacles in the fight against malaria has been drug resistance. Drug efficacy is monitored through therapeutic efficacy studies (TES). This tracks clinical and parasitological outcomes among patients receiving antimalarial treatment. High treatment failure rates were detected with dihydroartemisinin-piperaquine (DHA-PPQ) in the Western Pacific Region, such as in Cambodia, the Lao People\u2019s Democratic Republic, and Viet Nam."),
            
-            img(src= "Treatment_failure_Southeastasia.png", style= "width:100%; height= auto;"),
+            img(src= "Treatment_failure_Southeastasia.png", style= "width:100%; height= auto; max-width= 600px"),
             p("SOURCE: WHO World Malaria Report", style= "font-size: 0.70em"),
             
             p("These studies are highly recommended as they promote changes in the use of medicine to ensure patients receive effective treatment."),
