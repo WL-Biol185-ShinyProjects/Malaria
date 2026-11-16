@@ -2168,7 +2168,7 @@ server <- function(input, output, session) {
   
   # ==========================================================
   # M. WHO DASHBOARD: DOWNLOADS
-  # ==========================================================
+  # ==========================================================a
   
   save_png <- function(p, w, h) {
     function(file) {
@@ -2193,6 +2193,7 @@ server <- function(input, output, session) {
     content  = function(file) write_csv(drug_summary(), file)
   )
 }
+
 
 # ============================================================
 # LAUNCH
