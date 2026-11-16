@@ -27,18 +27,18 @@ library(sf)
 
 # Read malaria data
 global_raw <- read_csv(
-  "Brianna/estimated_number_of_malaria_cases_2000-2015.csv",
+  "estimated_number_of_malaria_cases_2000-2015.csv",
   show_col_types = FALSE
 )
 
 europe_raw <- read_csv(
-  "Brianna/estimated_number_of_WHO_europe_malaria_cases_2000-2015.csv",
+  "estimated_number_of_WHO_europe_malaria_cases_2000-2015.csv",
   show_col_types = FALSE
 )
 
 # Read medical doctor data
 doctors_raw <- read_csv(
-  "Brianna/WHO_global_medical_doctors_per_10,000_(varying_year_ranges).csv",
+  "WHO_global_medical_doctors_per_10,000_(varying_year_ranges).csv",
   show_col_types = FALSE
 )
 
@@ -287,13 +287,14 @@ draw_malaria_map <- function(selected_year) {
         )
       )
     ) %>%
-    addLegend(
-      position = "bottomright",
-      pal = case_palette,
-      values = europe_cases$cases,
-      title = "Estimated Cases",
-      na.label = "No estimate"
-    )
+   addLegend(
+     position = "bottomright",
+     pal = case_palette,
+     values = europe_cases$cases,
+     title = "Estimated Cases",
+     na.label = "No estimate",
+     group = "case-legend"
+)
 }
 ```
 
@@ -314,14 +315,14 @@ graph_theme <- function() {
       ),
       panel.grid.major = element_line(color = "#30243F"),
       panel.grid.minor = element_blank(),
-      axis.text = element_text(color = "#D9CDE8"),
-      axis.title = element_text(color = "#D9CDE8"),
+      axis.text = element_text(size  = 13, color = "#D9CDE8"),
+      axis.title = element_text(size = 15, color = "#D9CDE8"),
       plot.title = element_text(
         color = "#FF3CAC",
         face = "bold",
-        size = 14
+        size = 18
       ),
-      plot.subtitle = element_text(color = "#B9B1C9"),
+      plot.subtitle = element_text(size = 13, color = "#B9B1C9"),
       plot.margin = margin(
         t = 10,
         r = 15,
@@ -457,7 +458,7 @@ ui <- fluidPage(
       step = 1,
       sep = "",
       animate = animationOptions(
-        interval = 1500,
+        interval = 1000,
         loop = TRUE
       )
     )
@@ -554,7 +555,7 @@ ui <- fluidPage(
         h4("Understanding the Map"),
 
         p(
-          "This map displays estimated Malaria cases across the WHO European Region from 2000 to 2015. Use the year slider to observe changes over time. Azerbaijan is highlighted, and hovering over a country displays its estimated case count."
+          "This map displays estimated Malaria cases across the WHO European Region from 2000 to 2015. Use the year slider to observe changes over time. Azerbaijan is highlighted and hovering over a country displays its estimated case count."
         )
       )
     )
@@ -698,53 +699,81 @@ ui <- fluidPage(
 ```{r server}
 server <- function(input, output, session) {
 
-  # Initial map.
+  # Remember the map data from the initial year.
+  previous_map_data <- reactiveVal(make_map_data(2000))
+
+  # Draw the initial map once.
   output$malaria_map <- renderLeaflet({
-    draw_malaria_map(input$year)
+    draw_malaria_map(2000)
   })
 
-  # Update map polygons when the selected year changes.
+  # Update only countries whose estimates have changed.
   observeEvent(input$year, {
 
     map_data <- make_map_data(input$year)
+    old_data <- previous_map_data()
 
-    leafletProxy(
-      "malaria_map",
-      data = map_data
-    ) %>%
-      clearGroup("country-polygons") %>%
-      addPolygons(
-        group = "country-polygons",
-        layerId = ~iso3,
-        fillColor = ~case_palette(cases),
-        fillOpacity = 0.9,
-        color = ~ifelse(
-          is_azerbaijan,
-          "#FF3CAC",
-          "#55515F"
-        ),
-        weight = ~ifelse(
-          is_azerbaijan,
-          4,
-          0.8
-        ),
-        label = ~paste0(
-          name,
-          ifelse(is_azerbaijan, " - FOCUS COUNTRY", ""),
-          ": ",
-          ifelse(
-            is.na(cases),
-            "No estimate available",
-            format(round(cases), big.mark = ",")
+    # Find countries whose case estimates changed.
+    old_cases <- old_data$cases[
+      match(map_data$iso3, old_data$iso3)
+    ]
+
+    changed <- is.na(map_data$cases) != is.na(old_cases)
+
+    both_present <- !is.na(map_data$cases) &
+                    !is.na(old_cases)
+
+    changed[both_present] <-
+      map_data$cases[both_present] != old_cases[both_present]
+
+    changed[is.na(changed)] <- FALSE
+
+    # Only redraw countries that need updating.
+    changed_data <- map_data[changed, ]
+
+    if (nrow(changed_data) > 0) {
+
+      leafletProxy("malaria_map") %>%
+        removeShape(
+          layerId = changed_data$iso3
+        ) %>%
+        addPolygons(
+          data = changed_data,
+          group = "country-polygons",
+          layerId = ~iso3,
+          fillColor = ~case_palette(cases),
+          fillOpacity = 0.9,
+          color = ~ifelse(
+            is_azerbaijan,
+            "#FF3CAC",
+            "#55515F"
           ),
-          " Estimated Cases"
-        ),
-        highlightOptions = highlightOptions(
-          weight = 4,
-          color = "#FFD166",
-          bringToFront = TRUE
+          weight = ~ifelse(
+            is_azerbaijan,
+            4,
+            0.8
+          ),
+          label = ~paste0(
+            name,
+            ifelse(is_azerbaijan, " - FOCUS COUNTRY", ""),
+            ": ",
+            ifelse(
+              is.na(cases),
+              "No estimate available",
+              format(round(cases), big.mark = ",")
+            ),
+            " Estimated Cases"
+          ),
+          highlightOptions = highlightOptions(
+            weight = 4,
+            color = "#FFD166",
+            bringToFront = TRUE
+          )
         )
-      )
+    }
+
+    # Save the current year for the next comparison.
+    previous_map_data(map_data)
 
   }, ignoreInit = TRUE)
 
@@ -890,7 +919,7 @@ server <- function(input, output, session) {
         color = "#FF3CAC",
         nudge_x = 0.1,
         hjust = 0,
-        size = 3.5,
+        size = 4,
         show.legend = FALSE
       ) +
 
@@ -923,7 +952,18 @@ server <- function(input, output, session) {
         y = "Estimated Malaria Cases per 100,000 People"
       ) +
 
-      graph_theme()
+     graph_theme() +
+
+      theme(
+        legend.text = element_text(
+          size = 15,
+          color = "#D9CDE8"
+        ),
+        legend.title = element_text(
+          size = 16,
+          color = "#D9CDE8"
+        )
+      )
   })
 
 
