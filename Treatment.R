@@ -146,6 +146,7 @@ ui <- fluidPage(
             p("It is recommended by WHO for malaria-endemic countries to engage in entomological surveillance systems to provide the critical information needed in designing and implementing vector control strategies. This includes understanding of vector species\u2019 breeding and resting habitats, behaviors, feeding preferences, and resistance status to prevent the spread (WHO)."),
             
             img(src= "Invasive Vectors.png", style= "width:100%; height= auto; max-width= 600px"),
+            p("SOURCE: WHO World Malaria Report", style= "font-size: 0.70em"),
             
             h4("2. Vector Insecticide Resistance"),
             tags$blockquote("\u201cBetween 2010 and 2020, 88 countries, of which 85 are currently malaria-endemic, reported insecticide resistance data for Anopheles mosquitoes to WHO.\u201d"),
@@ -153,17 +154,30 @@ ui <- fluidPage(
             p("To control the spread of mosquitoes, vector control interventions heavily rely on large-scale use of insecticides such as insecticide-treated nets (ITNs) and indoor residual insecticide spraying. Resistance (due to mutation) is a major concern, particularly for pyrethroids, an insecticide class that is commercially available and often utilized (WHO). This has been detected greatly in Western Africa. Resistance to neonicotinoids and the pyrrole insecticide chlorfenapyr (more recently introduced insecticides) has not yet been confirmed and may be an alternative solution until resistance grows; however, this will be more costly."),
             p("WHO recommends enhanced insecticide monitoring and its impact on vector control. It is recommended that all malaria-endemic countries conduct tests once a year on insecticides from all classes in use or planned to be used on all major vector species from the different eco-epidemiological zones. Especially as there are relatively few data in regions other than Africa, such as South-East Asia."),
             
+            img(src= "Vector_insecticide_resistance.png", style= "width:100%; height= auto; max-width= 600px"),
+            p("SOURCE: WHO World Malaria Report", style= "font-size: 0.70em"),
+            
             h4("3. Antimalarial Drug Efficacy and Resistance"),
             p("One of the biggest obstacles in the fight against malaria has been drug resistance. Drug efficacy is monitored through therapeutic efficacy studies (TES). This tracks clinical and parasitological outcomes among patients receiving antimalarial treatment. High treatment failure rates were detected with dihydroartemisinin-piperaquine (DHA-PPQ) in the Western Pacific Region, such as in Cambodia, the Lao People\u2019s Democratic Republic, and Viet Nam."),
+           
+            img(src= "Treatment_failure_Southeastasia.png", style= "width:100%; height= auto;"),
+            p("SOURCE: WHO World Malaria Report", style= "font-size: 0.70em"),
+            
             p("These studies are highly recommended as they promote changes in the use of medicine to ensure patients receive effective treatment."),
             p("Artemisinin partial resistance is monitored using an established list of validated and candidate PfKelch13 markers associated with delayed clearance after a treatment containing artemisinin. These PfKelch13 mutations have emerged consistently in Eritrea, Rwanda and Uganda. However, there is an effective partner drug, resulting in a treatment failure rate below 10%. Other areas in which this mutation is highly prevalent are Cambodia, the Lao People\u2019s Democratic Republic and Viet Nam."),
+            
+            img(src= "marker_drug_resisatance.png", style= "width:100%; height= auto; max-width= 600px"),
+            p("SOURCE: WHO World Malaria Report", style= "font-size: 0.70em"),
             
             h4("4. Parasite pfhrp2/3 Gene Deletions"),
             p("The malaria parasite may have gene deletions in important markers for detection. This leads to false-negative diagnostic test results (RDTs). The rapid diagnostic test used to diagnose",
               em("Plasmodium falciparum"),
               "heavily relies on RDTs that target an antigen called histidine-rich protein 2 (HRP2), as well as some cross-reactivity with HRP3, a structurally similar parasite protein. It has been found that",
               em("P. falciparum"),
-              "parasites lack the pfhrp2 gene that the RDTs target. This was first identified in Peru in 2010.")
+              "parasites lack the pfhrp2 gene that the RDTs target. This was first identified in Peru in 2010."),
+            
+            img(src= "gene_deletions.png", style= "width:100%; height= auto; max-width= 600px"),
+            p("SOURCE: WHO World Malaria Report", style= "font-size: 0.70em")
           )
         )
       )
