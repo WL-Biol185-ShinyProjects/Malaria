@@ -27,18 +27,18 @@ library(sf)
 
 # Read malaria data
 global_raw <- read_csv(
-  "Brianna/estimated_number_of_malaria_cases_2000-2015.csv",
+  "estimated_number_of_malaria_cases_2000-2015.csv",
   show_col_types = FALSE
 )
 
 europe_raw <- read_csv(
-  "Brianna/estimated_number_of_WHO_europe_malaria_cases_2000-2015.csv",
+  "estimated_number_of_WHO_europe_malaria_cases_2000-2015.csv",
   show_col_types = FALSE
 )
 
 # Read medical doctor data
 doctors_raw <- read_csv(
-  "Brianna/WHO_global_medical_doctors_per_10,000_(varying_year_ranges).csv",
+  "WHO_global_medical_doctors_per_10,000_(varying_year_ranges).csv",
   show_col_types = FALSE
 )
 
