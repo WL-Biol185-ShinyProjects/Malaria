@@ -145,6 +145,8 @@ ui <- fluidPage(
             p("The issue with invasive vector species is that they may adapt to changing environments by altering their behavior patterns. Additionally, they may also become insecticide-resistant when exposed to current vector control interventions (WHO)."),
             p("It is recommended by WHO for malaria-endemic countries to engage in entomological surveillance systems to provide the critical information needed in designing and implementing vector control strategies. This includes understanding of vector species\u2019 breeding and resting habitats, behaviors, feeding preferences, and resistance status to prevent the spread (WHO)."),
             
+            img(src= "Invasive Vectors.png", style= "width:100%; height= auto; max-width= 600px"),
+            
             h4("2. Vector Insecticide Resistance"),
             tags$blockquote("\u201cBetween 2010 and 2020, 88 countries, of which 85 are currently malaria-endemic, reported insecticide resistance data for Anopheles mosquitoes to WHO.\u201d"),
             tags$blockquote("\u201cResistance has been found in vectors from all six WHO regions and to all four classes of insecticide that have been widely used in adult malaria vector control.\u201d"),
