@@ -299,7 +299,6 @@ ui <- navbarPage(
         h3("Sneak Peeks"),
         p(
           class = "home-lead",
-          "A quick look at what you will find inside. Click any card to jump there."
         ),
         div(
           class = "home-cards",
