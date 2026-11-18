@@ -75,6 +75,42 @@ measure_choices <- c(
 )
 measure_choices <- measure_choices[measure_choices %in% names(who)]
 
+drug_marker_table <- data.frame(
+  Drug = c("Artemisinins (base of all ACTs)",
+           "Artemether-lumefantrine",
+           "Chloroquine",
+           "Sulfadoxine-pyrimethamine",
+           "Piperaquine (partner in DHA-piperaquine)"),
+  `Why it matters` = c("Partial resistance makes parasites clear more slowly",
+                       "Widely used first-line ACT in Africa",
+                       "Former standard, now largely failed for P. falciparum",
+                       "Now mainly used for prevention",
+                       "Resistance documented in Southeast Asia"),
+  `Pf8 genetic markers` = c("kelch13 mutations",
+                            "pfmdr1 N86 / 184F / 1246D (NFD), pfcrt K76 wild type",
+                            "pfcrt K76T and the CVIET haplotype",
+                            "dhfr triple mutant, dhps K540E, SP \u201cquintuple\u201d mutant",
+                            "Plasmepsin 2/3 amplification"),
+  `Compared with (WHO efficacy data)` = c("Day-3 positivity and treatment failure",
+                                          "Artemether-lumefantrine treatment failure",
+                                          "Chloroquine treatment failure",
+                                          "SP treatment failure",
+                                          "Mapped in Pf8 only; not linked to WHO failure"),
+  check.names = FALSE
+)
+
+key_terms_table <- data.frame(
+  Term = c("Treatment failure",
+           "Day-3 positivity",
+           "Partial artemisinin resistance",
+           "10% failure threshold"),
+  Meaning = c("The infection came back or never cleared; usually PCR-corrected to separate true failure from a new infection.",
+              "Share of patients still showing parasites on day 3. High values are an early warning of artemisinin partial resistance.",
+              "Slower parasite clearance. It often does not cause outright failure because the partner drug clears the rest, so kelch13 prevalence and treatment failure can disagree.",
+              "The level at which WHO advises a country to reconsider its first-line treatment."),
+  check.names = FALSE
+)
+
 # Overview tables for the whole dataset
 species_counts <- who |> count(plasmodium_species, sort = TRUE)
 drug_counts    <- who |> count(drug_name, sort = TRUE) |> slice_head(n = 30)
@@ -122,6 +158,15 @@ ui <- fluidPage(
               tags$li("artesunate-pyronaridine, which WHO formally recommended in November 2022")
             ),
             
+            p("The following diagram represents an algorith providers may use to diagnosis and treat Malaria as provided by the CDC. "),
+            
+            div(style = "text-align: center;",
+              
+              img(src = "CDC Guidelines.png", style = "width:80%; height:auto; max-width:600px;")
+            ),
+            
+            p("SOURCE: CDC Malaria Diagnosis & Treatment in the U.S. ", style= "font-size: 0.70em"),
+            
             helpText("This page is general information, not medical advice. Treatment should follow a clinician and current national guidance.")
           )
         )
@@ -160,13 +205,13 @@ ui <- fluidPage(
             h4("3. Antimalarial Drug Efficacy and Resistance"),
             p("One of the biggest obstacles in the fight against malaria has been drug resistance. Drug efficacy is monitored through therapeutic efficacy studies (TES). This tracks clinical and parasitological outcomes among patients receiving antimalarial treatment. High treatment failure rates were detected with dihydroartemisinin-piperaquine (DHA-PPQ) in the Western Pacific Region, such as in Cambodia, the Lao People\u2019s Democratic Republic, and Viet Nam."),
            
-            img(src= "Treatment_failure_Southeastasia.png", style= "width:100%; height= auto;"),
+            img(src= "Treatment_failure_Southeastasia.png", style= "width:100%; height= auto; max-width= 600px"),
             p("SOURCE: WHO World Malaria Report", style= "font-size: 0.70em"),
             
             p("These studies are highly recommended as they promote changes in the use of medicine to ensure patients receive effective treatment."),
             p("Artemisinin partial resistance is monitored using an established list of validated and candidate PfKelch13 markers associated with delayed clearance after a treatment containing artemisinin. These PfKelch13 mutations have emerged consistently in Eritrea, Rwanda and Uganda. However, there is an effective partner drug, resulting in a treatment failure rate below 10%. Other areas in which this mutation is highly prevalent are Cambodia, the Lao People\u2019s Democratic Republic and Viet Nam."),
             
-            img(src= "marker_drug_resisatance.png", style= "width:100%; height= auto; max-width= 600px"),
+            img(src= "marker_drug_resistance.png", style= "width:100%; height= auto; max-width= 600px"),
             p("SOURCE: WHO World Malaria Report", style= "font-size: 0.70em"),
             
             h4("4. Parasite pfhrp2/3 Gene Deletions"),
@@ -183,7 +228,8 @@ ui <- fluidPage(
       )
     ),
     
-    # ---- Project info: filters + interactive map ----
+    # ---- Resistance and Mutation: filters + interactive map ----
+
     tabPanel(
       "Resistance and Mutations",
       br(),
@@ -212,7 +258,28 @@ ui <- fluidPage(
         ),
         mainPanel(
           width = 9,
-          leafletOutput("leaf", height = 600)
+          leafletOutput("leaf", height = 600),
+          
+          br(),
+          div(
+            style = "font-size: 1.05em; line-height: 1.6;",
+            
+            p("Constant shifts in land use, climate, migration, and drug and insecticide selection pressures alter mutation rates and susceptibility to malaria. The genomics of parasites, mosquitoes, and humans can aid in observing these patterns of the disease to understand why some people are more resistant to malaria and what factors are mutating the parasite. For example, scientists can identify when and where drugs are not effective due to resistance and use this information to find new targets for drugs, vaccines, and insecticides (MalariaGen)."),
+            
+            p("MalariaGen is a public genomic database acting as a key surveillance system. When considering transmission and the evolving chain of human, parasite, and mosquito, it is important to monitor locations over years, specifically the trends of these changes. This database can be compared to WHO\u2019s efficacy data to further analyze resistance."),
+            
+            p("The following table shows the drugs we investigated to identify resistance and their markers."),
+            tableOutput("drug_marker_table"),
+            
+            h4("Key terms"),
+            tableOutput("key_terms_table"),
+            
+            p("We used the MalariaGEN Pf8 dataset, which holds genetic data on P. falciparum parasites from patients around the world. After quality control, 24,409 genotyped samples from 33 countries, collected between 1966 and 2022, were available. Most came from West Africa (8,914), eastern Southeast Asia (5,880) and East Africa (4,173)."),
+            img(src= "WHO Therapeutic efficacy studies by year.png", style= "width:100%; height= auto; max-width= 600px"),
+            p("Fig 1. The WHO database holds roughly 160–195 records per year from 2010 to 2018, falling to under 50 a year after 2020, with very few from 2023–2024. The recent decline may reflect reporting delays rather than fewer studies, so recent trends should be read cautiously. This may also reflect geopolitical influences. A “record” is a row in the database, usually one treatment arm at one site, so the bars do not count separate studies."),
+            p("Fig 2. Efficacy studies are concentrated in sub-Saharan Africa and South and Southeast Asia, with few in the Americas. Areas without dots have not necessarily been tested, so an empty map region does not mean resistance is absent."),
+            p("The Intervactice map shows most studies found treatment failure below 10%. Higher values cluster in Southeast Asia, especially around Cambodia and Vietnam, with scattered higher values in parts of Africa. Each dot is one study record, so a high point can reflect a single small study.")
+           )
         )
       )
     ),
@@ -348,6 +415,13 @@ server <- function(input, output, session) {
     "drug_summary.csv",
     function(file) write_csv(drug_summary(), file)
   )
+  
+  #---- Resistance and Mutations  tables ----
+  output$drug_marker_table <- renderTable(
+    drug_marker_table, bordered = TRUE, striped = TRUE, width = "100%")
+  
+  output$key_terms_table <- renderTable(
+    key_terms_table, bordered = TRUE, striped = TRUE, width = "100%")
   
   # ---- Overview tables ----
   output$species_table <- renderTable(
