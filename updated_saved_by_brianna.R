@@ -299,7 +299,6 @@ ui <- navbarPage(
         h3("Sneak Peeks"),
         p(
           class = "home-lead",
-          "A quick look at what you will find inside. Click any card to jump there."
         ),
         div(
           class = "home-cards",
@@ -2263,7 +2262,7 @@ server <- function(input, output, session) {
   
   # ==========================================================
   # M. WHO DASHBOARD: DOWNLOADS
-  # ==========================================================
+  # ==========================================================a
   
   save_png <- function(p, w, h) {
     function(file) {
@@ -2288,6 +2287,7 @@ server <- function(input, output, session) {
     content  = function(file) write_csv(drug_summary(), file)
   )
 }
+
 
 # ============================================================
 # LAUNCH

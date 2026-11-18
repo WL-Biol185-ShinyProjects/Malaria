@@ -275,31 +275,48 @@ ui <- fluidPage(
             tableOutput("key_terms_table"),
             
             p("We used the MalariaGEN Pf8 dataset, which holds genetic data on P. falciparum parasites from patients around the world. After quality control, 24,409 genotyped samples from 33 countries, collected between 1966 and 2022, were available. Most came from West Africa (8,914), eastern Southeast Asia (5,880) and East Africa (4,173)."),
+            em("P. falciparum"),
             img(src= "WHO Therapeutic efficacy studies by year.png", style= "width:100%; height= auto; max-width= 600px"),
             p("Fig 1. The WHO database holds roughly 160–195 records per year from 2010 to 2018, falling to under 50 a year after 2020, with very few from 2023–2024. The recent decline may reflect reporting delays rather than fewer studies, so recent trends should be read cautiously. This may also reflect geopolitical influences. A “record” is a row in the database, usually one treatment arm at one site, so the bars do not count separate studies."),
-            p("Fig 2. Efficacy studies are concentrated in sub-Saharan Africa and South and Southeast Asia, with few in the Americas. Areas without dots have not necessarily been tested, so an empty map region does not mean resistance is absent."),
-            p("The Intervactice map shows most studies found treatment failure below 10%. Higher values cluster in Southeast Asia, especially around Cambodia and Vietnam, with scattered higher values in parts of Africa. Each dot is one study record, so a high point can reflect a single small study.")
+           
+            br(),
+            div(
+              style = "font-size: 1.05em; line-height: 1.6;",
+              h4("How to use the interactive map"),
+              p("Use the interactive map above to explore where antimalarial treatments have been tested and how well they worked. Each dot is a record from the WHO therapeutic efficacy studies database, placed at the study site."),
+              tags$ul(
+                tags$li(tags$b("Choose an outcome."), " Use \u201cOutcome shown on the map\u201d to switch between per-protocol treatment failure, Kaplan-Meier treatment failure, and day-3 positivity."),
+                tags$li(tags$b("Read the colors."), " Darker purple dots mean lower values and bright yellow dots mean higher values. Any value above the color scale maximum is shown in the brightest color, and you can change that maximum with the slider."),
+                tags$li(tags$b("Filter the records."), " Narrow the map by parasite species, drug, country, or study start year. Leave Drug and Country empty to see everything."),
+                tags$li(tags$b("Zoom and click."), " Zoom and drag to look at a region, then click a dot to see its country, study site, year, drug, species, and value.")
+              ),
+              
+              h4("What the map shows"),
+              p("Most studies found treatment failure below 10%. Higher values cluster in Southeast Asia, especially around Cambodia and Vietnam, with scattered higher values in parts of Africa. Each dot is one study record, so a high point can reflect a single small study."),
+              
+              h4("Findings"),
+              img(src= "failure_by_drug.png", style= "width:100%; height= auto; max-width= 600px"),
+              p("Fig 2. The typical study found very low failure for every drug (medians near 0–3%), but the spread differs. Dihydroartemisinin-piperaquine has a long tail of studies above 10%, including several above 50%, consistent with the piperaquine resistance documented in Cambodia, Laos and Vietnam. Artemether-lumefantrine, artesunate-amodiaquine, artesunate-mefloquine and artesunate-pyronaridine each have a smaller number of studies above 10%. The pattern is not in the median, which is why the individual dots matter."),
+              img(src= "day3_vs_failure.png", style= "width:100%; height= auto; max-width= 600px"),
+              p("Fig 3. Day-3 positivity and treatment failure show a weak positive relationship: the fitted line rises from near 0% failure at 0% day-3 positivity to roughly 25% at the highest values. The scatter is wide, though. Many studies with high day-3 positivity had little or no treatment failure, which fits the idea that a good partner drug can clear parasites that the artemisinin component clears slowly. Day-3 positivity is an early warning, not a reliable predictor of failure.")
+              
+              )
            )
         )
       )
     ),
     
     tabPanel(
-      "Project Drug summary",
-      br(),
-      filter_note,
-      tableOutput("drug_summary"),
-      br(),
-      downloadButton("dl_summary", "Download CSV")
-    ),
-    
-    tabPanel(
-      "Project Dataset overview",
+      "Dataset overview",
       br(),
       h4("Parasite species (all records)"),
       tableOutput("species_table"),
       h4("Most common drugs (all records)"),
-      tableOutput("drug_table")
+      tableOutput("drug_table"),
+      filter_note,
+      tableOutput("drug_summary"),
+      br(),
+      downloadButton("dl_summary", "Download CSV")
     )
   )
 )
