@@ -298,7 +298,47 @@ ui <- fluidPage(
               img(src= "failure_by_drug.png", style= "width:100%; height= auto; max-width= 600px"),
               p("Fig 2. The typical study found very low failure for every drug (medians near 0–3%), but the spread differs. Dihydroartemisinin-piperaquine has a long tail of studies above 10%, including several above 50%, consistent with the piperaquine resistance documented in Cambodia, Laos and Vietnam. Artemether-lumefantrine, artesunate-amodiaquine, artesunate-mefloquine and artesunate-pyronaridine each have a smaller number of studies above 10%. The pattern is not in the median, which is why the individual dots matter."),
               img(src= "day3_vs_failure.png", style= "width:100%; height= auto; max-width= 600px"),
-              p("Fig 3. Day-3 positivity and treatment failure show a weak positive relationship: the fitted line rises from near 0% failure at 0% day-3 positivity to roughly 25% at the highest values. The scatter is wide, though. Many studies with high day-3 positivity had little or no treatment failure, which fits the idea that a good partner drug can clear parasites that the artemisinin component clears slowly. Day-3 positivity is an early warning, not a reliable predictor of failure.")
+              p("Fig 3. Day-3 positivity and treatment failure show a weak positive relationship: the fitted line rises from near 0% failure at 0% day-3 positivity to roughly 25% at the highest values. The scatter is wide, though. Many studies with high day-3 positivity had little or no treatment failure, which fits the idea that a good partner drug can clear parasites that the artemisinin component clears slowly. Day-3 positivity is an early warning, not a reliable predictor of failure."),
+              
+              
+              h4("Genetic markers of resistance (MalariaGEN Pf8)"),
+              p("The WHO data show how well drugs work in patients. The Pf8 data show the genetic changes in parasites that are linked to resistance. Prevalence below means the share of samples carrying a mutation; a sample with both a mutant and a normal version of a gene (a mixed infection) was counted as carrying the mutation. Estimates based on fewer than 10 samples are not shown."),
+              
+              h4("Resistance differs sharply by region"),
+              img(src = "population_marker_heatmap.png",
+                  style = "width:100%; height:auto; max-width:800px;",
+                  alt = "Heatmap of resistance marker prevalence in each Pf8 population"),
+              p("Fig 4. Prevalence of resistance markers in each Pf8 population. Each tile is one marker in one region, and the number in the tile is the percent of samples carrying it. Three patterns stand out. Mutations in kelch13, the main marker of artemisinin partial resistance, are common in Southeast Asia (62% of samples in eastern Southeast Asia, 24% in western Southeast Asia) and essentially absent in the African populations. The pfcrt K76T mutation linked to chloroquine resistance is near universal in Asia (94-100%) but lower in Africa (19% in East Africa, 31% in West Africa, 44% in Central Africa). The dhps K540E mutation, part of the pattern linked to sulfadoxine-pyrimethamine resistance, is found in 86% of East African samples but only 1% of West African samples."),
+              
+              h4("Artemisinin partial resistance in Southeast Asia"),
+              img(src = "map_admin1_k13_validated_southeast_asia.png",
+                  style = "width:100%; height:auto; max-width:800px;",
+                  alt = "Map of Southeast Asia showing kelch13 mutation prevalence by province"),
+              p("Fig 5. Share of samples with a WHO-validated kelch13 mutation in each province (all years combined). Each dot is one province; color shows prevalence and size shows the number of samples. Prevalence is highest in Vietnam (79% of samples) and Cambodia (68%), followed by Thailand (30%), Laos (29%) and Myanmar (27%). The C580Y mutation accounts for most of this in Vietnam (72%) and Cambodia (61%), but only 3% of samples in Myanmar, so different kelch13 mutations are circulating there. Dots are placed at each province's center point, not at the exact collection site."),
+              
+              img(src = "k13_validated_heatmap_country_year.png",
+                  style = "width:100%; height:auto; max-width:800px;",
+                  alt = "Heatmap of kelch13 mutation prevalence by country and year"),
+              p("Fig 6. Prevalence of validated kelch13 mutations by country and year, for countries with at least one detection. The mutations have spread over time. In Vietnam, prevalence rose from 43% (2010-2012) to 93% (2019-2022). In Cambodia it rose from 51% (2010-2012) to 88% (2016-2018), and in Laos from 2% (2010-2012) to 53% (2019-2022). Thailand went from 4% (2009 or earlier) to 99% (2016-2018), though the latter figure rests on only 72 samples. Myanmar stayed roughly flat at about 26%. Across all of Africa in Pf8, only two samples carry a validated kelch13 mutation (C469Y, one from Ghana and one from Nigeria), and none are from East Africa. Because WHO reports these mutations in Eritrea, Rwanda and Uganda, this most likely reflects which countries and years Pf8 covers (it ends in 2022), not an absence of the problem."),
+              
+              h4("Older drugs: chloroquine and sulfadoxine-pyrimethamine"),
+              img(src = "trend_crt_K76T_clean.png",
+                  style = "width:100%; height:auto; max-width:800px;",
+                  alt = "Line chart of pfcrt K76T prevalence over time by population"),
+              p("Fig 7. Prevalence of pfcrt K76T over time in each Pf8 population. Across Africa, K76T fell from 81% of samples in the 1990s to 18% in 2016-2022. This is consistent with chloroquine being replaced by artemisinin-based combinations: when the drug stopped being used, parasites without the mutation became common again. In Asia and Oceania the mutation stayed near 100%."),
+              
+              img(src = "trend_dhps_K540E_east_africa.png",
+                  style = "width:100%; height:auto; max-width:800px;",
+                  alt = "Line chart of dhps K540E prevalence over time in East African countries"),
+              p("Fig 8. Prevalence of dhps K540E over time in East African countries. The mutation has become very common: in Kenya it rose from 48% of samples (2005 or earlier) to 98% (2016-2022), and it is above 90% in Malawi and Tanzania. The full pattern of five mutations (three in dhfr, two in dhps) linked to the greatest loss of sulfadoxine-pyrimethamine effectiveness was found in 77% of East African samples, versus 1% in West Africa."),
+              
+              h4("What the markers can and cannot tell us"),
+              tags$ul(
+                tags$li("Pf8 samples are not the patients enrolled in the WHO efficacy studies, so any comparison between the two datasets is by country and time period only. It can show association, not that a marker caused a treatment failure."),
+                tags$li("A mutation can be common without treatment failing, especially when the partner drug is still effective. This is why kelch13 prevalence and failure rates can disagree."),
+                tags$li("Sampling is uneven across countries and years, and results for small groups are less reliable. A missing country does not mean no resistance."),
+                tags$li("Prevalence figures combine all years unless stated, which can hide recent changes.")
+              )
               
               )
            )
