@@ -894,18 +894,113 @@ ui <- navbarPage(
   
   # ---------------- ABOUT US ----------------
   
+  
+  
   tabPanel(
     "About Us",
     fluidPage(
-      h3("About the Research Team"),
-      p(
-        "Project background, contributor roles, ",
-        "and institutional affiliations."
+      br(),
+      h2("Meet the Team!"),
+      p("The contributors behind this malaria research project."),
+      
+      # Hover animation for contributor bubbles
+      tags$style(HTML("
+      .team-card {
+        background-color: #21113D;
+        border: 2px solid #63318E;
+        border-radius: 20px;
+        padding: 22px;
+        margin: 10px 0;
+        text-align: left;
+        min-height: 450px;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+      }
+
+      .team-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 10px 25px rgba(177, 54, 160, 0.35);
+      }
+
+      .team-card img {
+        width: 180px;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 50%;
+        display: block;
+        margin: 0 0 18px 0;
+      }
+
+      .team-card h3 {
+        text-align: left;
+        color: #FF3CAC;
+      }
+
+      .team-card p {
+        text-align: left;
+        color: #F5F5F7;
+      }
+
+      .team-card .major {
+        font-size: 16px;
+        font-weight: bold;
+        color: #B9B1C9;
+        margin-top: -5px;
+        margin-bottom: 12px;
+      }
+    ")),
+      
+      fluidRow(
+        
+        column(
+          width = 4,
+          div(
+            class = "team-card",
+            tags$img(src = "lex.png"),
+            h3("Alexis Thompson"),
+            p(
+              "B.S. Neuroscience and Minor in Poverty and Human Capabilities | Pre-medicine",
+              class = "major"
+            ),
+            p("Hi! I am from Glassboro, NJ. I enjoy living in the Blue Ridge Mountains because I love backpacking and the outdoors!")
+          )
+        ),
+        
+        column(
+          width = 4,
+          div(
+            class = "team-card",
+            tags$img(src = "brianna_headshot.PNG"),
+            h3("Brianna Stone"),
+            p(
+              "B.S. Neuroscience and B.A. in Philosophy with Honors | Pre-medicine",
+              class = "major"
+            ),
+            p(
+              "Hey! I am from ",
+              em("Colorful Colorado"),
+              ", in a valley in the San Juans. I love climbing and hiking, but I've never gone skiing!"
+            )
+          )
+        ),
+        
+        column(
+          width = 4,
+          div(
+            class = "team-card",
+            tags$img(src = "Becca_Headhsot.PNG"),
+            h3("Rebecca Goldman"),
+            p(
+              "B.S. Biology and B.A. in Environmental Studies | Pre-medicine",
+              class = "major"
+            ),
+            p("Hi! I am from Honey Brook, Pennsylvania. I love traveling the globe and camping. My favorite place I've been is Botswana, where I lived for 5 months!")
+          )
+        )
+        
       )
     )
   )
 )
-
 
 # ============================================================
 # SERVER
