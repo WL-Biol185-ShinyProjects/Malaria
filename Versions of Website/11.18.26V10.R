@@ -2298,7 +2298,9 @@ ui <- navbarPage(
     fluidPage(
       br(),
       h2("Meet the Team!"),
-      p("The contributors behind this malaria research project."),
+      p("Our team brings together undergraduate students with a variety of academic backgrounds. 
+      Through this project, we have explored malaria research, prevention, and its broader global health implications. 
+        Learn more about the contributors behind our work!"),
       
       # Hover animation for contributor bubbles
       tags$style(HTML("
@@ -2353,7 +2355,7 @@ ui <- navbarPage(
           div(
             class = "team-card",
             tags$img(src = "About Us Tab/lex.png"),
-            h3("Alexis Thompson"),
+            h3("Alexis Thompson | thompsona@Alumni.wlu.edu"),
             p(
               "B.S. Neuroscience and Minor in Poverty and Human Capabilities | Pre-medicine",
               class = "major"
@@ -2367,7 +2369,7 @@ ui <- navbarPage(
           div(
             class = "team-card",
             tags$img(src = "About Us Tab/brianna_headshot.PNG"),
-            h3("Brianna Stone"),
+            h3("Brianna Stone | stoneb@Alumni.wlu.edu"),
             p(
               "B.S. Neuroscience and B.A. in Philosophy with Honors | Pre-medicine",
               class = "major"
@@ -2385,7 +2387,7 @@ ui <- navbarPage(
           div(
             class = "team-card",
             tags$img(src = "About Us Tab/Becca_Headhsot.PNG"),
-            h3("Rebecca Goldman"),
+            h3("Rebecca Goldman | goldmanr@Alumni.wlu.edu"),
             p(
               "B.S. Biology and B.A. in Environmental Studies | Pre-medicine",
               class = "major"
